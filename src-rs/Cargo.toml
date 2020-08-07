@@ -5,3 +5,8 @@ authors = ["Avi Srivastava <avi.srivastava@nyu.edu>"]
 edition = "2018"
 
 [dependencies]
+log = "0.4.8"
+bio = "0.31.0"
+clap = "2.33.1"
+flate2 = "1.0.14"
+pretty_env_logger = "0.4.0"
