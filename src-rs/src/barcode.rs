@@ -24,7 +24,8 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     info!("Found FASTQ files: {:?}", fastq_file_paths);
 
     info!("Importing Whitelist barcode");
-    let mut wtl_file = File::open("./ext/737K-cratac-v1.txt").expect("Unable to open file");
+    let mut wtl_file = MultiGzDecoder::new(File::open("./ext/737K-cratac-v1.txt.gz")
+        .expect("Unable to open file"));
 
     let mut wtl_strings = String::new();
     wtl_file
@@ -36,8 +37,9 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .map(|x| x.as_bytes())
         .collect::<HashSet<&[u8]>>();
 
+    let mut found_fwd = 0;
+    let mut found_rev = 0;
     let mut total_reads = 0;
-    let mut found = 0;
     for fastq_file_path in fastq_file_paths {
         info!("Working on: {:?}", fastq_file_path);
 
@@ -48,8 +50,11 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             total_reads += 1;
             let record = result.expect("Error during fastq record parsing");
             let seq = record.seq();
+            let rc_seq = bio::alphabets::dna::revcomp(record.seq());
             if wtl_barcodes.contains(seq) {
-                found += 1;
+                found_fwd += 1;
+            } else if wtl_barcodes.contains(&rc_seq[..]) {
+                found_rev += 1;
             }
 
             if total_reads % 1_000_000 == 0 {
@@ -64,10 +69,11 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     info!(
-        "Found: {}/{}=({:.02}%)",
-        found,
-        total_reads,
-        (found as f32 * 100.0) / total_reads as f32
+        "Found barcodes in fwd strand {}({:.02}%) and rev strand {}({:.02}%)",
+        found_fwd,
+        (found_fwd as f32 * 100.0) / total_reads as f32,
+        found_rev,
+        (found_rev as f32 * 100.0) / total_reads as f32,
     );
     Ok(())
 }
