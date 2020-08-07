@@ -24,8 +24,9 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     info!("Found FASTQ files: {:?}", fastq_file_paths);
 
     info!("Importing Whitelist barcode");
-    let mut wtl_file = MultiGzDecoder::new(File::open("./ext/737K-cratac-v1.txt.gz")
-        .expect("Unable to open file"));
+    let mut wtl_file = MultiGzDecoder::new(
+        File::open("./ext/737K-cratac-v1.txt.gz").expect("Unable to open file"),
+    );
 
     let mut wtl_strings = String::new();
     wtl_file
@@ -43,9 +44,10 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     for fastq_file_path in fastq_file_paths {
         info!("Working on: {:?}", fastq_file_path);
 
-        let fq_file = MultiGzDecoder::new(File::open(fastq_file_path).expect("can't open file"));
+        let fq_file = fastq::Reader::new(MultiGzDecoder::new(
+            File::open(fastq_file_path).expect("can't open file"),
+        ));
 
-        let fq_file = fastq::Reader::new(fq_file);
         for result in fq_file.records() {
             total_reads += 1;
             let record = result.expect("Error during fastq record parsing");

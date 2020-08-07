@@ -25,6 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .short("b")
                         .takes_value(true)
                         .required(true)
+                        .multiple(true)
                         .help("path to the cellular barcode file"),
                 ),
         )
