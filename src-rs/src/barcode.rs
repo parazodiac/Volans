@@ -59,12 +59,12 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 found_rev += 1;
             }
 
-            if total_reads % 1_000_000 == 0 {
+            if total_reads % crate::MIL == 0 {
                 print!(
                     "\r Done processing {:?} Million reads",
-                    total_reads / 1_000_000
+                    total_reads / crate::MIL
                 );
-                std::io::stdout().flush().unwrap();
+                std::io::stdout().flush().expect("Can't flush output");
             }
         }
         println!();
