@@ -9,6 +9,7 @@ use clap::ArgMatches;
 
 use crate::fragments::cb_string_to_u64;
 use bio::io::fastq;
+use std::collections::HashSet;
 
 pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut fastq_file_paths = Vec::new();
@@ -33,8 +34,8 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .read_to_string(&mut wtl_strings)
         .expect("Unable to read the file");
 
-    let wtl_cb: Vec<u64> = wtl_strings
-        .split("\n")
+    let wtl_barcodes: HashSet<u64> = wtl_strings
+        .split_terminator("\n")
         .map(|cb_str| cb_string_to_u64(cb_str.as_bytes()).expect("can't convert string to barcode"))
         .collect();
 
@@ -48,6 +49,7 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut found_fwd = 0;
     let mut found_rev = 0;
     let mut total_reads = 0;
+    //let mut cb_freq_counter = HashMap::new();
     for fastq_file_path in fastq_file_paths {
         info!("Working on: {:?}", fastq_file_path);
 
@@ -61,13 +63,13 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             match crate::CB_ORIENT_FW {
                 true => {
                     let seq = cb_string_to_u64(record.seq())?;
-                    if wtl_barcodes.get(&seq).is_some() {
+                    if wtl_barcodes.contains(&seq) {
                         found_fwd += 1;
                     }
                 }
                 false => {
                     let rc_seq = cb_string_to_u64(&bio::alphabets::dna::revcomp(record.seq()))?;
-                    if wtl_barcodes.get(&rc_seq).is_some() {
+                    if wtl_barcodes.contains(&rc_seq) {
                         found_rev += 1;
                     }
                 }

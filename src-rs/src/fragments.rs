@@ -52,13 +52,14 @@ impl Fragment {
 }
 
 pub fn cb_string_to_u64(cb_str: &[u8]) -> Result<u64, Box<dyn Error>> {
-    let mut cb_id = 0;
+    let mut cb_id: u64 = 0;
     for (idx, nt) in cb_str.iter().rev().enumerate() {
+        let offset = idx * 2;
         match nt {
-            65 | 78 => (),                                                              // A | N 00
-            67 => cb_id += 2_u64.pow(idx as u32 * 2),                                   // C 01
-            71 => cb_id += 2_u64.pow((idx as u32 * 2) + 1),                             // G 10
-            84 => cb_id += 2_u64.pow(idx as u32 * 2) + 2_u64.pow((idx as u32 * 2) + 1), // T 11
+            65 | 78 => (),              // A | N 00
+            67 => cb_id &= 1 << offset, // C 01
+            71 => cb_id &= 2 << offset, // G 10
+            84 => cb_id &= 3 << offset, // T 11
             _ => panic!("unknown nucleotide"),
         };
     }
