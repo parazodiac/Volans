@@ -2,6 +2,7 @@ extern crate bio;
 extern crate clap;
 extern crate flate2;
 extern crate itertools;
+extern crate libradicl;
 extern crate pretty_env_logger;
 extern crate rust_htslib;
 
@@ -13,8 +14,15 @@ use std::error::Error;
 
 mod bam;
 mod barcode;
+mod fragments;
 
-const MIL: usize = 1_000_000;
+pub const MIL: usize = 1_000_000;
+pub const MATE_DISTANCE: i64 = 5_000;
+pub const MIN_MAPQ: u8 = 30;
+pub const CB_LENGTH: usize = 16;
+pub const TN5_LEFT_OFFSET: i64 = 4;
+pub const TN5_RIGHT_OFFSET: i64 = 5;
+pub const CB_ORIENT_FW: bool = false;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("flash")
@@ -57,11 +65,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         None => (),
     };
 
+    let tfile = "/home/srivastavaa/avi/bingzie/flash/workflow/output/test.bed";
     match matches.subcommand_matches("fragments") {
-        Some(sub_m) => {
-            let ret = bam::fragments(&sub_m);
-            return ret;
-        }
+        Some(sub_m) => bam::fragments(&sub_m, &tfile)?,
         None => (),
     };
 

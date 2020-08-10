@@ -6,8 +6,8 @@ use std::io::Write;
 use std::path::Path;
 
 use clap::ArgMatches;
-use std::collections::HashSet;
 
+use crate::fragments::cb_string_to_u64;
 use bio::io::fastq;
 
 pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
@@ -33,10 +33,17 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .read_to_string(&mut wtl_strings)
         .expect("Unable to read the file");
 
-    let wtl_barcodes = wtl_strings
+    let wtl_cb: Vec<u64> = wtl_strings
         .split("\n")
-        .map(|x| x.as_bytes())
-        .collect::<HashSet<&[u8]>>();
+        .map(|cb_str| cb_string_to_u64(cb_str.as_bytes()).expect("can't convert string to barcode"))
+        .collect();
+
+    //let mut wtl_barcodes = libradicl::utils::generate_permitlist_map(&wtl_cb, crate::CB_LENGTH)?;
+    //for cb in wtl_cb {
+    //    wtl_barcodes.insert(cb, cb);
+    //}
+
+    //info!("{:?}", wtl_barcodes.len());
 
     let mut found_fwd = 0;
     let mut found_rev = 0;
@@ -51,12 +58,19 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         for result in fq_file.records() {
             total_reads += 1;
             let record = result.expect("Error during fastq record parsing");
-            let seq = record.seq();
-            let rc_seq = bio::alphabets::dna::revcomp(record.seq());
-            if wtl_barcodes.contains(seq) {
-                found_fwd += 1;
-            } else if wtl_barcodes.contains(&rc_seq[..]) {
-                found_rev += 1;
+            match crate::CB_ORIENT_FW {
+                true => {
+                    let seq = cb_string_to_u64(record.seq())?;
+                    if wtl_barcodes.get(&seq).is_some() {
+                        found_fwd += 1;
+                    }
+                }
+                false => {
+                    let rc_seq = cb_string_to_u64(&bio::alphabets::dna::revcomp(record.seq()))?;
+                    if wtl_barcodes.get(&rc_seq).is_some() {
+                        found_rev += 1;
+                    }
+                }
             }
 
             if total_reads % crate::MIL == 0 {
