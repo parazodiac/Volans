@@ -68,10 +68,10 @@ fn is_high_quality(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
 
     if min_quality < MIN_MAPQ {
         counter.mapq_skip += 1;
-        return false;
+        return true;
     }
 
-    true
+    false
 }
 
 fn is_chimeric(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
@@ -114,7 +114,7 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     info!("Found BAM files: {:?}", bam_file_path);
     let mut input_bam = bam::Reader::from_path(bam_file_path).expect("Can't open BAM file");
-    input_bam.set_threads(6).unwrap();
+    input_bam.set_threads(4).unwrap();
     let bam_header = input_bam.header().clone();
 
     let bed_file_path = sub_m.value_of("obed").expect("can't find BED flag");
@@ -176,7 +176,7 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             true => Fragment::new(maln, aln),
             false => Fragment::new(aln, maln),
         };
-        frag.write(&mut obed_file)?;
+        frag.write(&mut obed_file, "text")?;
     }
 
     println!("{}", counter);

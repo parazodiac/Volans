@@ -1,17 +1,21 @@
 use std::error::Error;
-use std::io::BufWriter;
+use std::fs::File;
 use std::io::Write;
+use std::io::Read;
+use std::io::{BufReader, BufWriter};
 
 use rust_htslib::bam::record::Cigar;
 use rust_htslib::bam::Record;
 
 use crate::{CB_LENGTH, TN5_LEFT_OFFSET, TN5_RIGHT_OFFSET};
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct Fragment {
-    chr: u32,
-    start: u64,
-    end: u64,
-    cb: u64,
+    pub chr: u32,
+    pub start: u64,
+    pub end: u64,
+    pub cb: u64,
 }
 
 impl std::fmt::Display for Fragment {
@@ -40,28 +44,33 @@ impl Fragment {
         }
     }
 
-    fn _as_bytes(&self) -> Option<Vec<u8>> {
-        let mut frag_bytes = Vec::new();
-
-        frag_bytes.append(&mut self.chr.to_le_bytes().to_vec());
-        frag_bytes.append(&mut self.start.to_le_bytes().to_vec());
-        frag_bytes.append(&mut self.end.to_le_bytes().to_vec());
-        frag_bytes.append(&mut self.cb.to_le_bytes().to_vec());
-
-        Some(frag_bytes)
-    }
-
-    pub fn write<T: std::io::Write>(
+    pub fn write(
         &self,
-        mut file: &mut BufWriter<T>,
+        mut file: &mut BufWriter<File>,
+        write_mode: &str,
     ) -> Result<(), Box<dyn Error>> {
-        write!(
-            &mut file,
-            "{}\t{}\t{}\t{}\n",
-            self.chr, self.start, self.end, self.cb
-        )?;
+        if write_mode == "text" {
+            write!(
+                &mut file,
+                "{}\t{}\t{}\t{}\n",
+                self.chr, self.start, self.end, self.cb
+            )?;
+        } else if write_mode == "binary" {
+            let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+            file.write_all(&encoded)?;
+        } else {
+            unreachable!();
+        }
 
         Ok(())
+    }
+
+    pub fn read(
+        file: &mut BufReader<File>,
+        mem_block: &mut [u8; 28],
+    ) -> Result<Fragment, Box<bincode::ErrorKind>> {
+        file.read_exact(mem_block)?;
+        bincode::deserialize(&mem_block[..])
     }
 }
 
