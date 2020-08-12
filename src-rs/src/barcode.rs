@@ -9,7 +9,7 @@ use clap::ArgMatches;
 
 use crate::fragments::cb_string_to_u64;
 use bio::io::fastq;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut fastq_file_paths = Vec::new();
@@ -24,30 +24,32 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
     info!("Found FASTQ files: {:?}", fastq_file_paths);
 
-    info!("Importing Whitelist barcode");
-    let mut wtl_file = MultiGzDecoder::new(
-        File::open("./ext/737K-cratac-v1.txt.gz").expect("Unable to open file"),
-    );
+    let wtl_barcodes: HashMap<u64, u64>;
+    {
+        info!("Importing Whitelist barcode");
+        let mut wtl_file = MultiGzDecoder::new(
+            File::open("./ext/737K-cratac-v1.txt.gz").expect("Unable to open file"),
+        );
 
-    let mut wtl_strings = String::new();
-    wtl_file
-        .read_to_string(&mut wtl_strings)
-        .expect("Unable to read the file");
+        let mut wtl_strings = String::new();
+        wtl_file
+            .read_to_string(&mut wtl_strings)
+            .expect("Unable to read the file");
 
-    let wtl_barcodes: HashSet<u64> = wtl_strings
-        .split_terminator("\n")
-        .map(|cb_str| cb_string_to_u64(cb_str.as_bytes()).expect("can't convert string to barcode"))
-        .collect();
-
-    //let mut wtl_barcodes = libradicl::utils::generate_permitlist_map(&wtl_cb, crate::CB_LENGTH)?;
-    //for cb in wtl_cb {
-    //    wtl_barcodes.insert(cb, cb);
-    //}
+        let wtl_cb_ids: Vec<u64> = wtl_strings.split_terminator("\n")
+            .map(|cb_str| cb_string_to_u64(cb_str.as_bytes()).expect("can't convert string to barcode"))
+            .collect();
+    
+        wtl_barcodes = libradicl::utils::generate_permitlist_map(&wtl_cb_ids, crate::CB_LENGTH)?;
+        for cb in wtl_cb_ids {
+            wtl_barcodes.insert(cb, cb);
+        }
+    }
 
     //info!("{:?}", wtl_barcodes.len());
 
-    let mut found_fwd = 0;
-    let mut found_rev = 0;
+    let mut reads_with_wtl_cb = 0;
+    let mut reads_with_correction = 0;
     let mut total_reads = 0;
     //let mut cb_freq_counter = HashMap::new();
     for fastq_file_path in fastq_file_paths {
@@ -59,22 +61,6 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
         for result in fq_file.records() {
             total_reads += 1;
-            let record = result.expect("Error during fastq record parsing");
-            match crate::CB_ORIENT_FW {
-                true => {
-                    let seq = cb_string_to_u64(record.seq())?;
-                    if wtl_barcodes.contains(&seq) {
-                        found_fwd += 1;
-                    }
-                }
-                false => {
-                    let rc_seq = cb_string_to_u64(&bio::alphabets::dna::revcomp(record.seq()))?;
-                    if wtl_barcodes.contains(&rc_seq) {
-                        found_rev += 1;
-                    }
-                }
-            }
-
             if total_reads % crate::MIL == 0 {
                 print!(
                     "\r Done processing {:?} Million reads",
@@ -82,16 +68,36 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 );
                 std::io::stdout().flush().expect("Can't flush output");
             }
+
+            let record = result.expect("Error during fastq record parsing");
+            let cb: u64 = match crate::CB_ORIENT_FW {
+                true => cb_string_to_u64(record.seq())?,
+                false => cb_string_to_u64(&bio::alphabets::dna::revcomp(record.seq()))?,
+            };
+
+            if wtl_barcodes.contains(&cb) { 
+                reads_with_wtl_cb += 1; 
+            } else {
+                let mut neighbors = HashSet::new();
+                crate::libradicl::utils::get_all_one_edit_neighbors(cb, crate::CB_LENGTH, &mut neighbors)?;
+                for neighbor in neighbors {
+                    if wtl_barcodes.contains(&neighbor) {
+                        reads_with_correction += 1;
+                        break;
+                    }
+                }
+            }
         }
         println!();
     }
 
     info!(
-        "Found barcodes in fwd strand {}({:.02}%) and rev strand {}({:.02}%)",
-        found_fwd,
-        (found_fwd as f32 * 100.0) / total_reads as f32,
-        found_rev,
-        (found_rev as f32 * 100.0) / total_reads as f32,
+        "Found barcodes in fwd = {} strand with Exact {}({:.02}%) and corrected {}({:.02}%) sequences.",
+        crate::CB_ORIENT_FW,
+        reads_with_wtl_cb,
+        (reads_with_wtl_cb as f32 * 100.0) / total_reads as f32,
+        reads_with_correction,
+        (reads_with_correction as f32 * 100.0) / total_reads as f32,
     );
     Ok(())
 }
