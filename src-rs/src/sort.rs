@@ -22,7 +22,7 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .to_str()
         .unwrap()
         .to_owned()
-        + ".sort.bed";
+        + ".sorted.bed";
     info!("Creating sorted BED file: {:?}", sorted_file_path);
     let mut output_bed = BufWriter::new(File::create(sorted_file_path).expect("Can't create BED file"));
 

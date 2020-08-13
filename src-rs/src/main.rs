@@ -22,6 +22,7 @@ mod fragments;
 mod fstats;
 mod sort;
 mod text;
+mod group;
 
 pub const MIL: usize = 1_000_000;
 pub const TMIL: usize = 10_000_000;
@@ -43,6 +44,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             SubCommand::with_name("sort")
                 .about("A subcommand to sort the file by a chromosome names.")
+                .arg(
+                    Arg::with_name("ibed")
+                        .long("ibed")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the BED file with CB sequences."),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("group")
+                .about("A subcommand to group the file by (chr, start, end, CB)")
                 .arg(
                     Arg::with_name("ibed")
                         .long("ibed")
@@ -111,6 +124,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(sub_m) => sort::sort(&sub_m)?,
         None => (),
     };
+
+    match matches.subcommand_matches("group") {
+        Some(sub_m) => group::dedup(&sub_m)?,
+        None => (),
+    }
 
     match matches.subcommand_matches("text") {
         Some(sub_m) => text::convert(&sub_m)?,

@@ -10,7 +10,7 @@ use rust_htslib::bam::Record;
 use crate::{CB_LENGTH, TN5_LEFT_OFFSET, TN5_RIGHT_OFFSET};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub struct Fragment {
     pub chr: u32,
     pub start: u64,
@@ -65,12 +65,51 @@ impl Fragment {
         Ok(())
     }
 
+    pub fn write_with_tag(
+        &self,
+        mut file: &mut BufWriter<File>,
+        tag: u16
+    ) -> Result<(), Box<dyn Error>> {
+        write!(
+            &mut file,
+            "{}\t{}\t{}\t{}\t{}\n",
+            self.chr, self.start, self.end, self.cb, tag
+        )?;
+
+        Ok(())
+    }
+
     pub fn read(
         file: &mut BufReader<File>,
         mem_block: &mut [u8; 28],
     ) -> Result<Fragment, Box<bincode::ErrorKind>> {
         file.read_exact(mem_block)?;
         bincode::deserialize(&mem_block[..])
+    }
+}
+
+pub struct FragmentFile {
+    buf: BufReader<File>,
+    mem_block: [u8; 28],
+}
+
+impl FragmentFile {
+    pub fn new(buf: BufReader<File>) -> FragmentFile {
+        FragmentFile {
+            buf,
+            mem_block: [0; 28],
+        }
+    }
+}
+
+impl Iterator for FragmentFile {
+    type Item = Fragment;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match Fragment::read(&mut self.buf, &mut self.mem_block) {
+            Ok(frag) => Some(frag),
+            Err(_) => None,
+        }
     }
 }
 
