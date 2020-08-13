@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs::File;
-use std::io::Write;
 use std::io::Read;
+use std::io::Write;
 use std::io::{BufReader, BufWriter};
 
 use rust_htslib::bam::record::Cigar;

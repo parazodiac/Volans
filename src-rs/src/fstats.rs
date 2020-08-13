@@ -1,3 +1,5 @@
+use num_format::{Locale, ToFormattedString};
+
 #[derive(Default)]
 pub struct FragStats {
     pub total_reads: usize,
@@ -43,37 +45,37 @@ impl std::fmt::Display for FragStats {
         let total_chimeric = self.num_chimeric();
 
         let mut stats: String = String::new();
-        stats += &format!("\n\n\nSTATS: Total Reads: {}\n", self.total_reads);
+        stats += &format!("\n\n\nSTATS: Total Reads: {}\n", (self.total_reads).to_formatted_string(&Locale::en));
         stats += &format!(
             "STATS: Total Unmapped skip: {}({:.02}%) with {}({:.02}%) HighQ orphan.\n",
-            self.unmap_skip,
+            (self.unmap_skip).to_formatted_string(&Locale::en),
             self.percent_total(self.unmap_skip),
-            self.unmap_orphan,
+            (self.unmap_orphan).to_formatted_string(&Locale::en),
             self.percent_total(self.unmap_orphan)
         );
         stats += &format!(
             "STATS: Total MultiMapping Reads: {}({:.02}%).\n",
-            self.mm_reads,
+            (self.mm_reads).to_formatted_string(&Locale::en),
             self.percent_total(self.mm_reads)
         );
         stats += &format!(
             "STATS: Total Mitochondrial Reads: {}({:.02}%).\n",
-            self.mito_skip,
+            (self.mito_skip).to_formatted_string(&Locale::en),
             self.percent_total(self.mito_skip)
         );
         stats += &format!(
             "STATS: Total MAPQ skip: {}({:.02}%).\n",
-            self.mapq_skip,
+            (self.mapq_skip).to_formatted_string(&Locale::en),
             self.percent_total(self.mapq_skip)
         );
         stats += &format!(
             "STATS: Total Chimeric Reads: {}({:.02}%)\n",
-            total_chimeric,
+            (total_chimeric).to_formatted_string(&Locale::en),
             self.percent_total(total_chimeric)
         );
         stats += &format!(
             "STATS: Total Reads skipped: {}({:.02}%)\n",
-            total_skipped,
+            (total_skipped).to_formatted_string(&Locale::en),
             self.percent_total(total_skipped),
         );
 

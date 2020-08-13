@@ -7,6 +7,8 @@ extern crate libradicl;
 extern crate pretty_env_logger;
 extern crate rust_htslib;
 extern crate serde;
+extern crate indicatif;
+extern crate num_format;
 
 #[macro_use]
 extern crate log;
@@ -14,7 +16,7 @@ extern crate log;
 use clap::{App, Arg, SubCommand};
 use std::error::Error;
 
-// mod barcode;
+mod barcode;
 mod filter;
 mod fragments;
 mod fstats;
@@ -22,6 +24,9 @@ mod sort;
 mod text;
 
 pub const MIL: usize = 1_000_000;
+pub const TMIL: usize = 10_000_000;
+pub const HMIL: usize = 100_000_000;
+
 pub const MATE_MIN_DISTANCE: i64 = 20;
 pub const MATE_MAX_DISTANCE: i64 = 5_000;
 pub const MIN_MAPQ: u8 = 30;
@@ -37,7 +42,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         .about("A set of fast helper functions for Cut&Tag/ATAC data.")
         .subcommand(
             SubCommand::with_name("sort")
-                .about("[wip] A test function to sort the file by a column.")
+                .about("A subcommand to sort the file by a chromosome names.")
+                .arg(
+                    Arg::with_name("ibed")
+                        .long("ibed")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the BED file with CB sequences."),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("correct")
+                .about("A subcommand to sequence correct the cb sequences.")
                 .arg(
                     Arg::with_name("ibed")
                         .long("ibed")
@@ -97,6 +114,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match matches.subcommand_matches("text") {
         Some(sub_m) => text::convert(&sub_m)?,
+        None => (),
+    };
+
+    match matches.subcommand_matches("correct") {
+        Some(sub_m) => barcode::correct(&sub_m)?,
         None => (),
     };
 

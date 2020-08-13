@@ -176,7 +176,7 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             true => Fragment::new(maln, aln),
             false => Fragment::new(aln, maln),
         };
-        frag.write(&mut obed_file, "text")?;
+        frag.write(&mut obed_file, "binary")?;
     }
 
     println!("{}", counter);
