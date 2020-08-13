@@ -29,7 +29,7 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut mem_block = [0; 28];
     let mut chr_names: HashSet<u32> = HashSet::new();
     {
-        info!("Finding unique chromosome names in top 10M lines");
+        info!("Finding unique chromosome names in top 100M lines");
         let mut num_lines = 0;
         let mut input_bed = BufReader::new(File::open(bed_file_path.clone()).expect("Can't open BED file"));
         while let Ok(frag) = Fragment::read(&mut input_bed, &mut mem_block) {
