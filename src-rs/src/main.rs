@@ -42,7 +42,7 @@ pub const CB_ORIENT_FW: bool = false;
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("flash")
         .version("0.1.0")
-        .author("Avi Srivastava")
+        .author("Avi Srivastava, Tim Stuart, Bingjie Zhang, Rahul Satija")
         .about("A set of fast helper functions for Cut&Tag/ATAC data.")
         .subcommand(
             SubCommand::with_name("filter")
