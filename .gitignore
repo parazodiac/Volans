@@ -10,4 +10,6 @@
 /src-rs/**/*.rs.bk
 /workflow/.snakemake
 /workflow/temp
-/workflow/output
+/workflow/small
+/workflow/k27ac
+/workflow/k27me3

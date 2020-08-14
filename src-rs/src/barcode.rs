@@ -1,20 +1,21 @@
+use clap::ArgMatches;
 use std::error::Error;
 use std::fs::File;
-use std::io::{BufReader, BufWriter};
-use std::io::Write;
-use std::path::Path;
 use std::io::Read;
-use clap::ArgMatches;
+use std::io::Write;
+use std::io::{BufReader, BufWriter};
+use std::path::Path;
 
-use crate::fragments::{Fragment, cb_string_to_u64};
-use std::collections::HashSet;
+use crate::fragments::{cb_string_to_u64, Fragment};
 use flate2::read::MultiGzDecoder;
 use num_format::{Locale, ToFormattedString};
+use std::collections::HashSet;
 
-pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {    
+pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     info!("Importing Whitelist barcode");
     let mut wtl_file = MultiGzDecoder::new(
-        File::open("./ext/737K-cratac-v1.txt.gz").expect("Unable to open file"),
+        File::open("/home/srivastavaa/avi/bingzie/flash/src-rs/ext/737K-cratac-v1.txt.gz")
+            .expect("Unable to open file"),
     );
 
     let mut wtl_strings = String::new();
@@ -32,12 +33,13 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         let cb_id = cb_string_to_u64(&cb_bytes)?;
         wtl_barcodes.insert(cb_id);
     }
-   
+
     let bed_file_path = Path::new(sub_m.value_of("ibed").expect("can't find BED flag"))
         .canonicalize()
         .expect("can't find absolute path of input bed file");
     info!("Found BED file: {:?}", bed_file_path);
-    let mut input_bed = BufReader::new(File::open(bed_file_path.clone()).expect("Can't open BED file"));
+    let mut input_bed =
+        BufReader::new(File::open(bed_file_path.clone()).expect("Can't open BED file"));
 
     let correct_file_path = bed_file_path
         .parent()
@@ -48,7 +50,8 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .to_owned()
         + ".corrected.bed";
     info!("Creating CB corrected BED file: {:?}", correct_file_path);
-    let mut output_bed = BufWriter::new(File::create(correct_file_path).expect("Can't create BED file"));
+    let mut output_bed =
+        BufWriter::new(File::create(correct_file_path).expect("Can't create BED file"));
 
     let mut mem_block = [0; 28];
     let mut num_lines = 0;
@@ -60,7 +63,6 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             std::io::stdout().flush().expect("Can't flush output");
         }
 
-        
         if wtl_barcodes.contains(&frag.cb) | wtl_barcodes.contains(&!frag.cb) {
             frag.write(&mut output_bed, "binary")?;
             num_filtered += 1;
@@ -68,9 +70,11 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     println!();
-    info!("Filtered {} out of {} ({:.2}%)", (num_lines-num_filtered).to_formatted_string(&Locale::en), 
+    info!(
+        "Filtered {} out of {} ({:.2}%)",
+        (num_lines - num_filtered).to_formatted_string(&Locale::en),
         (num_lines).to_formatted_string(&Locale::en),
-        (num_lines-num_filtered) as f32 * 100.0 / num_lines as f32,
+        (num_lines - num_filtered) as f32 * 100.0 / num_lines as f32,
     );
 
     Ok(())

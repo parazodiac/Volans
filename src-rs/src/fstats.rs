@@ -45,7 +45,10 @@ impl std::fmt::Display for FragStats {
         let total_chimeric = self.num_chimeric();
 
         let mut stats: String = String::new();
-        stats += &format!("\n\n\nSTATS: Total Reads: {}\n", (self.total_reads).to_formatted_string(&Locale::en));
+        stats += &format!(
+            "\n\n\nSTATS: Total Reads: {}\n",
+            (self.total_reads).to_formatted_string(&Locale::en)
+        );
         stats += &format!(
             "STATS: Total Unmapped skip: {}({:.02}%) with {}({:.02}%) HighQ orphan.\n",
             (self.unmap_skip).to_formatted_string(&Locale::en),

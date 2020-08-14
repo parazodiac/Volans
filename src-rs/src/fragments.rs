@@ -65,20 +65,6 @@ impl Fragment {
         Ok(())
     }
 
-    pub fn write_with_tag(
-        &self,
-        mut file: &mut BufWriter<File>,
-        tag: u16
-    ) -> Result<(), Box<dyn Error>> {
-        write!(
-            &mut file,
-            "{}\t{}\t{}\t{}\t{}\n",
-            self.chr, self.start, self.end, self.cb, tag
-        )?;
-
-        Ok(())
-    }
-
     pub fn read(
         file: &mut BufReader<File>,
         mem_block: &mut [u8; 28],
