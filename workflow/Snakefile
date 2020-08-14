@@ -102,4 +102,6 @@ rule flash:
         RUST_LOG="trace" /usr/bin/time {flash_bin} correct -i {output_folder}/flash.bed
         RUST_LOG="trace" /usr/bin/time {flash_bin} sort -i {output_folder}/flash.corrected.bed
         RUST_LOG="trace" /usr/bin/time {flash_bin} group -i {output_folder}/flash.corrected.sorted.bed
+        RUST_LOG="trace" /usr/bin/time {flash_bin} callpeak -i {output_folder}/flash.corrected.sorted.grouped.bed
+        RUST_LOG="trace" /usr/bin/time {flash_bin} count -i {output_folder}/flash.corrected.sorted.grouped.bed
         """

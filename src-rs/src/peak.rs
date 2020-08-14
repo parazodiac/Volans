@@ -62,8 +62,8 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let mut count = frag.cb;
 
             tasks.remove(&fidx);
-            let start_search = std::cmp::min(0, start - crate::FRAG_DIST);
-            for intv in itree.find(start_search..end + crate::FRAG_DIST) {
+            let start_search = std::cmp::max(0, start as i64 - crate::FRAG_DIST) as u64;
+            for intv in itree.find(start_search..end + crate::FRAG_DIST as u64) {
                 let intv_frag_idx = intv.data().0;
                 if !tasks.contains(&intv_frag_idx) {
                     continue;
@@ -72,9 +72,9 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 let intv_frag_start = intv.interval().start;
                 let intv_frag_end = intv.interval().end;
 
-                if ((intv_frag_end as i64 - end as i64).abs() <= crate::FRAG_DIST as i64
+                if ((intv_frag_end as i64 - end as i64).abs() <= crate::FRAG_DIST
                     && intv_frag_start >= start)
-                    || ((intv_frag_start as i64 - start as i64).abs() <= crate::FRAG_DIST as i64
+                    || ((intv_frag_start as i64 - start as i64).abs() <= crate::FRAG_DIST
                         && intv_frag_end <= end)
                 {
                     count += intv.data().1;

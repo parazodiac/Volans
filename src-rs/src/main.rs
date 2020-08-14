@@ -24,12 +24,13 @@ mod group;
 mod peak;
 mod sort;
 mod text;
+mod count;
 
 pub const MIL: usize = 1_000_000;
 pub const TMIL: usize = 10_000_000;
 pub const HMIL: usize = 100_000_000;
 
-pub const FRAG_DIST: u64 = 100;
+pub const FRAG_DIST: i64 = 500;
 pub const MATE_MIN_DISTANCE: i64 = 20;
 pub const MATE_MAX_DISTANCE: i64 = 5_000;
 pub const MIN_MAPQ: u8 = 30;
@@ -120,6 +121,26 @@ fn main() -> Result<(), Box<dyn Error>> {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("count")
+                .about("A subcommand to generate peak v cell count matrix")
+                .arg(
+                    Arg::with_name("ibed")
+                        .long("ibed")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the BED file with peaks and frequency."),
+                )
+                .arg(
+                    Arg::with_name("cbed")
+                        .long("cbed")
+                        .short("c")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the BED file fragments and CB."),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("text")
                 .about("A subcommand to convert binary bed to text.")
                 .arg(
@@ -156,6 +177,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match matches.subcommand_matches("callpeak") {
         Some(sub_m) => peak::callpeak(&sub_m)?,
+        None => (),
+    }
+
+    match matches.subcommand_matches("count") {
+        Some(sub_m) => count::count(&sub_m)?,
         None => (),
     }
 
