@@ -33,8 +33,11 @@ impl Fragment {
         let end = soft_clip_pos(maln) - TN5_RIGHT_OFFSET;
 
         let qname = aln.qname();
-        let cb_id = cb_string_to_u64(&qname[(qname.len() - CB_LENGTH)..])
-            .expect("can't convert cb string to u64");
+        let cb_id = match crate::IS_TENX {
+            false => cb_string_to_u64(&qname[(qname.len() - CB_LENGTH)..])
+                .expect("can't convert cb string to u64"),
+            true => cb_string_to_u64(&aln.aux(b"CR").unwrap().string()).unwrap(),
+        };
 
         Fragment {
             chr: chr as u32,
@@ -49,17 +52,20 @@ impl Fragment {
         mut file: &mut BufWriter<File>,
         write_mode: &str,
     ) -> Result<(), Box<dyn Error>> {
-        if write_mode == "text" {
-            write!(
+        match write_mode {
+            "text" => write!(
                 &mut file,
                 "{}\t{}\t{}\t{}\n",
-                self.chr, self.start, self.end, self.cb
-            )?;
-        } else if write_mode == "binary" {
-            let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-            file.write_all(&encoded)?;
-        } else {
-            unreachable!();
+                self.chr,
+                self.start,
+                self.end,
+                u64_to_cb_string(self.cb)?
+            )?,
+            "binary" => {
+                let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+                file.write_all(&encoded)?
+            }
+            _ => unreachable!(),
         }
 
         Ok(())
@@ -123,11 +129,29 @@ pub fn cb_string_to_u64(cb_str: &[u8]) -> Result<u64, Box<dyn Error>> {
             67 => cb_id |= 1 << offset, // C 01
             71 => cb_id |= 2 << offset, // G 10
             84 => cb_id |= 3 << offset, // T 11
-            _ => panic!("unknown nucleotide"),
+            _ => panic!("unknown nucleotide {}", nt),
         };
     }
 
     Ok(cb_id)
+}
+
+pub fn u64_to_cb_string(cb_id: u64) -> Result<String, Box<dyn Error>> {
+    let mut cb_str = String::new();
+    for i in 0..crate::CB_LENGTH {
+        let offset = (crate::CB_LENGTH - i - 1) * 2;
+        let nt = (cb_id & (3 << offset)) >> offset;
+
+        match nt {
+            0 => cb_str += "A",
+            1 => cb_str += "C",
+            2 => cb_str += "G",
+            3 => cb_str += "T",
+            _ => unreachable!(),
+        }
+    }
+
+    Ok(cb_str)
 }
 
 #[cfg(test)]

@@ -25,7 +25,7 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     let mut wtl_barcodes: HashSet<u64> = HashSet::new();
     for cb_str in wtl_strings.split_terminator("\n") {
-        let cb_bytes = match crate::CB_ORIENT_FW {
+        let cb_bytes = match crate::IS_TENX {
             true => cb_str.as_bytes().to_owned(),
             false => bio::alphabets::dna::revcomp(cb_str.as_bytes()).to_owned(),
         };

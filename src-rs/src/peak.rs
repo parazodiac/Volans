@@ -29,6 +29,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut output_bed =
         BufWriter::new(File::create(peak_file_path).expect("Can't create BED file"));
 
+    let mut total_peaks = 0;
     for (chr, chr_group) in FragmentFile::new(input_bed)
         .map(|maybe_frag| maybe_frag)
         .group_by(|frag| frag.chr)
@@ -42,7 +43,10 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
         let mut itree = IntervalTree::new();
         for (fidx, frag) in frags.iter().enumerate() {
-            assert!(frag.start < frag.end, format!("{}, {}", frag.start, frag.end));
+            assert!(
+                frag.start < frag.end,
+                format!("{}, {}", frag.start, frag.end)
+            );
             itree.insert(frag.start..frag.end, (fidx, frag.cb))
         }
 
@@ -92,9 +96,11 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
         for frag in peak_bed {
             frag.write(&mut output_bed, "binary")?;
+            total_peaks += 1;
         }
     }
 
     println!();
+    info!("Found total {} peaks", total_peaks);
     Ok(())
 }

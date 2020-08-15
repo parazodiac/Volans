@@ -17,6 +17,7 @@ use clap::{App, Arg, SubCommand};
 use std::error::Error;
 
 mod barcode;
+mod count;
 mod filter;
 mod fragments;
 mod fstats;
@@ -24,26 +25,25 @@ mod group;
 mod peak;
 mod sort;
 mod text;
-mod count;
 
 pub const MIL: usize = 1_000_000;
 pub const TMIL: usize = 10_000_000;
 pub const HMIL: usize = 100_000_000;
 
-pub const FRAG_DIST: i64 = 500;
+pub const FRAG_DIST: i64 = 10;
 pub const MATE_MIN_DISTANCE: i64 = 20;
 pub const MATE_MAX_DISTANCE: i64 = 5_000;
 pub const MIN_MAPQ: u8 = 30;
 pub const CB_LENGTH: usize = 16;
 pub const TN5_LEFT_OFFSET: i64 = 4;
 pub const TN5_RIGHT_OFFSET: i64 = 5;
-pub const CB_ORIENT_FW: bool = false;
+pub const IS_TENX: bool = true;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("flash")
         .version("0.1.0")
         .author("Avi Srivastava, Tim Stuart, Bingjie Zhang, Rahul Satija")
-        .about("A set of fast helper functions for Cut&Tag/ATAC data.")
+        .about("A set of fast helper functions for Cut&Tag/ATAC data analysis.")
         .subcommand(
             SubCommand::with_name("filter")
                 .about("A subcommand to filter BAM and generate BED.")
