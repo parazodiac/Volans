@@ -7,7 +7,6 @@ use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
 use crate::fragments::{cb_string_to_u64, Fragment};
-use flate2::read::MultiGzDecoder;
 use num_format::{Locale, ToFormattedString};
 use std::collections::HashSet;
 

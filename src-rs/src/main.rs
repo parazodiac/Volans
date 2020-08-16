@@ -1,7 +1,6 @@
 extern crate bincode;
 extern crate bio;
 extern crate clap;
-extern crate flate2;
 extern crate indicatif;
 extern crate itertools;
 extern crate libradicl;
