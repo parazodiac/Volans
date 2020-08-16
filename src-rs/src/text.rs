@@ -26,6 +26,10 @@ pub fn convert(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut input_bed = BufReader::new(File::open(bed_file_path).expect("Can't open BED file"));
     let mut output_bed =
         BufWriter::new(File::create(text_file_path).expect("Can't open output BED file"));
+    let out_mode = match sub_m.occurrences_of("cbtext") {
+        0 => "text",
+        _ => "cb_text",
+    };
 
     let mut num_lines = 0;
     let mut mem_block = [0; 28];
@@ -36,7 +40,7 @@ pub fn convert(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             std::io::stdout().flush().expect("Can't flush output");
         }
 
-        frag.write(&mut output_bed, "text")?;
+        frag.write(&mut output_bed, out_mode)?;
     }
 
     Ok(())

@@ -151,6 +151,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             SubCommand::with_name("text")
                 .about("A subcommand to convert binary bed to text.")
                 .arg(
+                    Arg::with_name("cbtext")
+                        .long("cbtext")
+                        .help("writes the last column as CB sequence."),
+                )
+                .arg(
                     Arg::with_name("ibed")
                         .long("ibed")
                         .short("i")

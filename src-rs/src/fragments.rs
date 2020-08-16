@@ -60,6 +60,14 @@ impl Fragment {
                 self.chr,
                 self.start,
                 self.end,
+                self.cb
+            )?,
+            "cb_text" => write!(
+                &mut file,
+                "{}\t{}\t{}\t{}\n",
+                self.chr,
+                self.start,
+                self.end,
                 u64_to_cb_string(self.cb)?
             )?,
             "binary" => {
