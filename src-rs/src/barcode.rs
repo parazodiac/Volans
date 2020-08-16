@@ -66,7 +66,6 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         if num_lines % crate::TMIL == 0 {
             print!("\rDone processing {}0M reads", num_lines / crate::TMIL);
             std::io::stdout().flush().expect("Can't flush output");
-            break;
         }
 
         if wtl_barcodes.contains(&frag.cb) {

@@ -12,6 +12,7 @@ pub struct FragStats {
     pub mito_skip: usize,
     pub unmap_skip: usize,
     pub unmap_orphan: usize,
+    pub cb_skip: usize,
 }
 
 impl FragStats {
@@ -23,7 +24,8 @@ impl FragStats {
             + self.chimeric_max_distance
             + self.chimeric_min_distance
             + self.mito_skip
-            + self.unmap_skip;
+            + self.unmap_skip
+            + self.cb_skip;
     }
 
     fn num_chimeric(&self) -> usize {
@@ -75,6 +77,11 @@ impl std::fmt::Display for FragStats {
             "STATS: Total Chimeric Reads: {}({:.02}%)\n",
             (total_chimeric).to_formatted_string(&Locale::en),
             self.percent_total(total_chimeric)
+        );
+        stats += &format!(
+            "STATS: Total Reads w/ Unknown CB: {}({:.02}%)\n",
+            (self.cb_skip).to_formatted_string(&Locale::en),
+            self.percent_total(self.cb_skip)
         );
         stats += &format!(
             "STATS: Total Reads skipped: {}({:.02}%)\n",

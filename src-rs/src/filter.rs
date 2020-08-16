@@ -107,6 +107,17 @@ fn is_chimeric(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
     false
 }
 
+fn has_barcode_tag(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
+    for aln in alignments {
+        if aln.aux(b"CB").is_none() {
+            counter.cb_skip += 1;
+            return false
+        }
+    }
+
+    return true;
+}
+
 pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let bam_file_path = Path::new(sub_m.value_of("ibam").expect("can't find BAM flag"))
         .canonicalize()
@@ -121,7 +132,7 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut obed_file = BufWriter::new(File::create(bed_file_path)?);
     let bed_file_path = Path::new(bed_file_path)
         .canonicalize()
-        .expect("cann't resolved absolute bed file path");
+        .expect("can't resolved absolute bed file path");
     info!("Created BED file: {:?}", bed_file_path);
 
     let mito_string = sub_m
@@ -167,6 +178,10 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             continue;
         }
         if is_chimeric(&alignments, &mut counter) {
+            continue;
+        }
+
+        if crate::IS_TENX && !has_barcode_tag(&alignments, &mut counter) {
             continue;
         }
 

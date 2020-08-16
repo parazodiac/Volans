@@ -36,7 +36,8 @@ impl Fragment {
         let cb_id = match crate::IS_TENX {
             false => cb_string_to_u64(&qname[(qname.len() - CB_LENGTH)..])
                 .expect("can't convert cb string to u64"),
-            true => cb_string_to_u64(&aln.aux(b"CR").unwrap().string()).unwrap(),
+            true => cb_string_to_u64(&aln.aux(b"CB").unwrap().string()[..crate::CB_LENGTH])
+                .expect("can't convert cb string to u64"),
         };
 
         Fragment {
