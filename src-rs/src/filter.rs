@@ -111,7 +111,7 @@ fn has_barcode_tag(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
     for aln in alignments {
         if aln.aux(b"CB").is_none() {
             counter.cb_skip += 1;
-            return false
+            return false;
         }
     }
 
@@ -134,6 +134,23 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .canonicalize()
         .expect("can't resolved absolute bed file path");
     info!("Created BED file: {:?}", bed_file_path);
+
+    let (is_tenx, cb_extractor): (bool, fn(&Record) -> u64) = match sub_m.occurrences_of("tenx") {
+        0 => (false, |aln: &Record| -> u64 {
+            let qname = aln.qname();
+            fragments::cb_string_to_u64(&qname[(qname.len() - crate::CB_LENGTH)..])
+                .expect("can't convert cb string to u64")
+        }),
+        _ => (true, |aln: &Record| -> u64 {
+            fragments::cb_string_to_u64(&aln.aux(b"CB").unwrap().string()[..crate::CB_LENGTH])
+                .expect("can't convert cb string to u64")
+        }),
+    };
+
+    let just_stats = match sub_m.occurrences_of("stats") {
+        0 => false,
+        _ => true,
+    };
 
     let mito_string = sub_m
         .value_of("mitostr")
@@ -181,15 +198,19 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             continue;
         }
 
-        if crate::IS_TENX && !has_barcode_tag(&alignments, &mut counter) {
+        if is_tenx && !has_barcode_tag(&alignments, &mut counter) {
+            continue;
+        }
+
+        if just_stats {
             continue;
         }
 
         let aln = alignments.first().unwrap();
         let maln = alignments.last().unwrap();
         let frag = match alignments.first().unwrap().is_reverse() {
-            true => Fragment::new(maln, aln),
-            false => Fragment::new(aln, maln),
+            true => Fragment::new(maln, aln, cb_extractor),
+            false => Fragment::new(aln, maln, cb_extractor),
         };
         frag.write(&mut obed_file, "binary")?;
     }

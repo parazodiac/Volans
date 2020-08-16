@@ -31,12 +31,12 @@ pub const HMIL: usize = 100_000_000;
 
 pub const FRAG_DIST: i64 = 10;
 pub const MATE_MIN_DISTANCE: i64 = 20;
-pub const MATE_MAX_DISTANCE: i64 = 1_000;
+pub const MATE_MAX_DISTANCE: i64 = 662;
 pub const MIN_MAPQ: u8 = 30;
 pub const CB_LENGTH: usize = 16;
 pub const TN5_LEFT_OFFSET: i64 = 4;
 pub const TN5_RIGHT_OFFSET: i64 = 5;
-pub const IS_TENX: bool = true;
+pub const IS_WTL_FWD: bool = true;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("flash")
@@ -61,6 +61,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true)
                         .help("path to the output bed file"),
+                )
+                .arg(
+                    Arg::with_name("tenx")
+                        .long("tenx")
+                        .help("use tag CB from 10x generated BAM."),
+                )
+                .arg(
+                    Arg::with_name("stats")
+                        .long("stats")
+                        .help("Don't write the output BED, just produce stats."),
                 )
                 .arg(
                     Arg::with_name("mitostr")

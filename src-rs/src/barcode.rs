@@ -11,16 +11,17 @@ use num_format::{Locale, ToFormattedString};
 use std::collections::HashSet;
 
 pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
-    let wtl_file_path = Path::new(sub_m.value_of("whitelist").expect("can't find whitelist flag"))
-        .canonicalize()
-        .expect("can't find absolute path of input whitelist file");
+    let wtl_file_path = Path::new(
+        sub_m
+            .value_of("whitelist")
+            .expect("can't find whitelist flag"),
+    )
+    .canonicalize()
+    .expect("can't find absolute path of input whitelist file");
     info!("Found whitelist CB file: {:?}", wtl_file_path);
 
     info!("Importing Whitelist barcode");
-    let mut wtl_file = BufReader::new(
-        File::open(wtl_file_path)
-            .expect("Unable to open file"),
-    );
+    let mut wtl_file = BufReader::new(File::open(wtl_file_path).expect("Unable to open file"));
 
     let mut wtl_strings = String::new();
     wtl_file
@@ -29,7 +30,7 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     let mut wtl_barcodes: HashSet<u64> = HashSet::new();
     for cb_str in wtl_strings.split_terminator("\n") {
-        let cb_bytes = match crate::IS_TENX {
+        let cb_bytes = match crate::IS_WTL_FWD {
             true => cb_str.as_bytes().to_owned(),
             false => bio::alphabets::dna::revcomp(cb_str.as_bytes()).to_owned(),
         };

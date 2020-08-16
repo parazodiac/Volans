@@ -1,4 +1,4 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
@@ -41,14 +41,6 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         let mut frags: Vec<Fragment> = chr_group.collect();
         frags.sort_unstable_by(|a, b| a.cb.cmp(&b.cb).reverse());
 
-        let mut frag_lens = HashMap::new();
-        for frag in frags {
-            let count = frag_lens.entry(frag.end - frag.start)
-                .or_insert(0);
-            *count += 1;
-        }
-
-        println!("{:?}", frag_lens);
         //let mut itree = IntervalTree::new();
         //for (fidx, frag) in frags.iter().enumerate() {
         //    assert!(

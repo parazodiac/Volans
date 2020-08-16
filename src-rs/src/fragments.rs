@@ -7,7 +7,7 @@ use std::io::{BufReader, BufWriter};
 use rust_htslib::bam::record::Cigar;
 use rust_htslib::bam::Record;
 
-use crate::{CB_LENGTH, TN5_LEFT_OFFSET, TN5_RIGHT_OFFSET};
+use crate::{TN5_LEFT_OFFSET, TN5_RIGHT_OFFSET};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Hash, PartialEq, Eq)]
@@ -25,20 +25,13 @@ impl std::fmt::Display for Fragment {
 }
 
 impl Fragment {
-    pub fn new(aln: &Record, maln: &Record) -> Fragment {
+    pub fn new(aln: &Record, maln: &Record, extract_cb: fn(&Record) -> u64) -> Fragment {
         assert_eq!(aln.is_reverse(), false);
 
         let chr = aln.tid() as u32;
         let start = soft_clip_pos(aln) + TN5_LEFT_OFFSET;
         let end = soft_clip_pos(maln) - TN5_RIGHT_OFFSET;
-
-        let qname = aln.qname();
-        let cb_id = match crate::IS_TENX {
-            false => cb_string_to_u64(&qname[(qname.len() - CB_LENGTH)..])
-                .expect("can't convert cb string to u64"),
-            true => cb_string_to_u64(&aln.aux(b"CB").unwrap().string()[..crate::CB_LENGTH])
-                .expect("can't convert cb string to u64"),
-        };
+        let cb_id = extract_cb(aln);
 
         Fragment {
             chr: chr as u32,
@@ -57,10 +50,7 @@ impl Fragment {
             "text" => write!(
                 &mut file,
                 "{}\t{}\t{}\t{}\n",
-                self.chr,
-                self.start,
-                self.end,
-                self.cb
+                self.chr, self.start, self.end, self.cb
             )?,
             "cb_text" => write!(
                 &mut file,
