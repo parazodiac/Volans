@@ -1,8 +1,9 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
+use std::fs::OpenOptions;
 
 use crate::fragments::Fragment;
 use clap::ArgMatches;
@@ -23,50 +24,76 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .unwrap()
         .to_owned()
         + ".sorted.bed";
-    info!("Creating sorted BED file: {:?}", sorted_file_path);
-    let mut output_bed =
-        BufWriter::new(File::create(sorted_file_path).expect("Can't create BED file"));
 
+    let mut num_lines = 0;
     let mut mem_block = [0; 28];
     let mut chr_names: HashSet<u32> = HashSet::new();
     {
-        info!("Finding unique chromosome names in top 100M lines");
-        let mut num_lines = 0;
+        info!("Finding unique chromosome names in the full file");
         let mut input_bed =
             BufReader::new(File::open(bed_file_path.clone()).expect("Can't open BED file"));
         while let Ok(frag) = Fragment::read(&mut input_bed, &mut mem_block) {
             num_lines += 1;
             chr_names.insert(frag.chr);
-
-            if num_lines > crate::HMIL {
-                break;
-            }
         }
         info!("Found Total {:?} unique chromosome names", chr_names.len());
     }
 
     let mut chr_names: Vec<u32> = chr_names.into_iter().collect();
     chr_names.sort();
+    {
+        let mut file_handles: Vec<BufWriter<_>> = chr_names.iter().map(|x| {
+            BufWriter::new(File::create(sorted_file_path.clone() + &x.to_string())
+                .expect("Can't create BED file"))
+        }).collect();
 
-    let pbar = ProgressBar::new(chr_names.len() as u64);
-    pbar.set_style(
-        ProgressStyle::default_bar()
-            .template(
-                "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}",
-            )
-            .progress_chars("╢▌▌░╟"),
-    );
+        let mut chr_names_to_idx = HashMap::new();
+        for (idx, chr_name) in chr_names.iter().enumerate() {
+            chr_names_to_idx.insert(chr_name, idx);
+        };
 
-    info!("Sorting files");
-    for chr_name in chr_names {
+        let pbar = ProgressBar::new(num_lines);
+        pbar.set_style(
+            ProgressStyle::default_bar()
+                .template(
+                    "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {percent}% ({eta})",
+                )
+                .progress_chars("╢▌▌░╟"),
+        );
+        pbar.set_draw_delta(num_lines / 100);
+
+        info!("Sorting files");
         let mut input_bed =
             BufReader::new(File::open(bed_file_path.clone()).expect("Can't open BED file"));
         while let Ok(frag) = Fragment::read(&mut input_bed, &mut mem_block) {
-            if frag.chr == chr_name {
-                frag.write(&mut output_bed, "binary")?;
-            }
+            pbar.inc(1);
+            match chr_names_to_idx.get(&frag.chr) {
+                Some(fh_idx) => frag.write(&mut file_handles[*fh_idx], "binary")?,
+                None => unreachable!(),
+            };
         }
-        pbar.inc(1);
+
+        pbar.finish_with_message("Segregation Complete");
+    } // closing all files.
+
+    info!("Merging files into {}", sorted_file_path);
+    let file_names: Vec<_> = chr_names.iter().map(|x| {
+        sorted_file_path.clone() + &x.to_string()
+    }).collect();
+
+    // renaming first file
+    std::fs::rename(file_names.first().unwrap(), sorted_file_path.clone())?;
+    let file = OpenOptions::new().append(true).open(sorted_file_path).expect("Can't create BED file");
+    let mut master_fh = BufWriter::new(file);
+
+    for file_name in file_names.iter().skip(1) {
+        let mut file_name = BufReader::new(File::open(file_name)?);
+        std::io::copy(&mut file_name, &mut master_fh)?;
+    }
+
+    info!("Deleting temporary files.");
+    for file_name in file_names.into_iter().skip(1) {
+        std::fs::remove_file(file_name)?;
     }
 
     Ok(())
