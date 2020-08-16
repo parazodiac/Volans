@@ -76,6 +76,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             SubCommand::with_name("correct")
                 .about("A subcommand to sequence correct the cb sequences.")
                 .arg(
+                    Arg::with_name("whitelist")
+                        .long("whitelist")
+                        .short("w")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the list of known whitelist CB."),
+                )
+                .arg(
                     Arg::with_name("ibed")
                         .long("ibed")
                         .short("i")

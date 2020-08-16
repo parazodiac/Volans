@@ -12,9 +12,14 @@ use num_format::{Locale, ToFormattedString};
 use std::collections::HashSet;
 
 pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
+    let wtl_file_path = Path::new(sub_m.value_of("whitelist").expect("can't find whitelist flag"))
+        .canonicalize()
+        .expect("can't find absolute path of input whitelist file");
+    info!("Found whitelist CB file: {:?}", wtl_file_path);
+
     info!("Importing Whitelist barcode");
-    let mut wtl_file = MultiGzDecoder::new(
-        File::open("/home/srivastavaa/avi/bingzie/flash/src-rs/ext/737K-cratac-v1.txt.gz")
+    let mut wtl_file = BufReader::new(
+        File::open(wtl_file_path)
             .expect("Unable to open file"),
     );
 
@@ -55,26 +60,27 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     let mut mem_block = [0; 28];
     let mut num_lines = 0;
-    let mut num_filtered = 0;
+    let mut num_corrected = 0;
     while let Ok(frag) = Fragment::read(&mut input_bed, &mut mem_block) {
         num_lines += 1;
         if num_lines % crate::TMIL == 0 {
             print!("\rDone processing {}0M reads", num_lines / crate::TMIL);
             std::io::stdout().flush().expect("Can't flush output");
+            break;
         }
 
-        if wtl_barcodes.contains(&frag.cb) | wtl_barcodes.contains(&!frag.cb) {
+        if wtl_barcodes.contains(&frag.cb) {
             frag.write(&mut output_bed, "binary")?;
-            num_filtered += 1;
+            num_corrected += 1;
         }
     }
 
     println!();
     info!(
-        "Filtered {} out of {} ({:.2}%)",
-        (num_lines - num_filtered).to_formatted_string(&Locale::en),
-        (num_lines).to_formatted_string(&Locale::en),
-        (num_lines - num_filtered) as f32 * 100.0 / num_lines as f32,
+        "Total Fragments Passed {} out of {} ({:.2}%)",
+        num_corrected.to_formatted_string(&Locale::en),
+        num_lines.to_formatted_string(&Locale::en),
+        num_corrected as f32 * 100.0 / num_lines as f32,
     );
 
     Ok(())
