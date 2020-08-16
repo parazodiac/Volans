@@ -31,7 +31,7 @@ pub const HMIL: usize = 100_000_000;
 
 pub const FRAG_DIST: i64 = 10;
 pub const MATE_MIN_DISTANCE: i64 = 20;
-pub const MATE_MAX_DISTANCE: i64 = 5_000;
+pub const MATE_MAX_DISTANCE: i64 = 1_000;
 pub const MIN_MAPQ: u8 = 30;
 pub const CB_LENGTH: usize = 16;
 pub const TN5_LEFT_OFFSET: i64 = 4;

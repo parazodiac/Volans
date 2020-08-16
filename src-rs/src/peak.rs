@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap};
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
@@ -41,63 +41,72 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         let mut frags: Vec<Fragment> = chr_group.collect();
         frags.sort_unstable_by(|a, b| a.cb.cmp(&b.cb).reverse());
 
-        let mut itree = IntervalTree::new();
-        for (fidx, frag) in frags.iter().enumerate() {
-            assert!(
-                frag.start < frag.end,
-                format!("{}, {}", frag.start, frag.end)
-            );
-            itree.insert(frag.start..frag.end, (fidx, frag.cb))
+        let mut frag_lens = HashMap::new();
+        for frag in frags {
+            let count = frag_lens.entry(frag.end - frag.start)
+                .or_insert(0);
+            *count += 1;
         }
 
-        assert!(frags.first().unwrap().cb >= frags.last().unwrap().cb);
-        let mut peak_bed: Vec<Fragment> = Vec::with_capacity(frags.len() / 10);
-        let mut tasks: HashSet<usize> = (0..frags.len()).into_iter().collect();
-        for (fidx, frag) in frags.into_iter().enumerate() {
-            if tasks.len() == 0 {
-                break;
-            }
-            if !tasks.contains(&fidx) {
-                continue;
-            }
+        println!("{:?}", frag_lens);
+        //let mut itree = IntervalTree::new();
+        //for (fidx, frag) in frags.iter().enumerate() {
+        //    assert!(
+        //        frag.start < frag.end,
+        //        format!("{}, {}", frag.start, frag.end)
+        //    );
+        //    itree.insert(frag.start..frag.end, fidx)
+        //}
 
-            let start = frag.start;
-            let end = frag.end;
-            let mut count = frag.cb;
+        //let mut peak_bed: Vec<Fragment> = Vec::with_capacity(frags.len() / 10);
+        //let mut tasks: HashSet<usize> = (0..frags.len()).into_iter().collect();
+        //for (fidx, frag) in frags.into_iter().enumerate() {
+        //    if tasks.len() == 0 {
+        //        break;
+        //    }
+        //    if !tasks.contains(&fidx) {
+        //        continue;
+        //    }
 
-            tasks.remove(&fidx);
-            let start_search = std::cmp::max(0, start as i64 - crate::FRAG_DIST) as u64;
-            for intv in itree.find(start_search..end + crate::FRAG_DIST as u64) {
-                let intv_frag_idx = intv.data().0;
-                if !tasks.contains(&intv_frag_idx) {
-                    continue;
-                }
+        //    let start = frag.start;
+        //    let end = frag.end;
+        //    let mut count = frag.cb;
 
-                let intv_frag_start = intv.interval().start;
-                let intv_frag_end = intv.interval().end;
+        //    tasks.remove(&fidx);
+        //    let start_search = std::cmp::max(0, start as i64 - crate::FRAG_DIST) as u64;
+        //    for intv in itree.find(start_search..end + crate::FRAG_DIST as u64) {
+        //        let intv_frag_idx = intv.data().0;
+        //        if !tasks.contains(&intv_frag_idx) {
+        //            continue;
+        //        }
 
-                if ((intv_frag_end as i64 - end as i64).abs() <= crate::FRAG_DIST
-                    && intv_frag_start >= start)
-                    || ((intv_frag_start as i64 - start as i64).abs() <= crate::FRAG_DIST
-                        && intv_frag_end <= end)
-                {
-                    count += intv.data().1;
-                    tasks.remove(&intv_frag_idx);
-                }
-            } // end for itree.find()
+        //        let intv_frag_start = intv.interval().start;
+        //        let intv_frag_end = intv.interval().end;
 
-            peak_bed.push(Fragment {
-                chr: frag.chr,
-                start: start,
-                end: end,
-                cb: count,
-            });
-        } // end for frags.into_iter()
+        //        if ((intv_frag_end as i64 - end as i64).abs() <= crate::FRAG_DIST
+        //            && intv_frag_start >= start)
+        //            || ((intv_frag_start as i64 - start as i64).abs() <= crate::FRAG_DIST
+        //                && intv_frag_end <= end)
+        //        {
+        //            count += intv.data().1;
+        //            tasks.remove(&intv_frag_idx);
+        //        }
+        //    } // end for itree.find()
 
-        for frag in peak_bed {
-            frag.write(&mut output_bed, "binary")?;
-            total_peaks += 1;
-        }
+        //    peak_bed.push(Fragment {
+        //        chr: frag.chr,
+        //        start: start,
+        //        end: end,
+        //        cb: count,
+        //    });
+        //} // end for frags.into_iter()
+
+        //for frag in peak_bed {
+        //    frag.write(&mut output_bed, "binary")?;
+        //    total_peaks += 1;
+        //}
+
+        break;
     }
 
     println!();
