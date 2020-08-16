@@ -9,6 +9,8 @@ use crate::fragments::{Fragment, FragmentFile};
 use bio::data_structures::interval_tree::IntervalTree;
 use clap::ArgMatches;
 use itertools::Itertools;
+use rayon::prelude::*;
+use std::ops::Range;
 
 pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let bed_file_path = Path::new(sub_m.value_of("ibed").expect("can't find BED flag"))
@@ -38,8 +40,24 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         print!("\rWorking on Chromosome: {}", chr);
         std::io::stdout().flush().expect("Can't flush output");
 
-        let mut frags: Vec<Fragment> = chr_group.collect();
-        frags.sort_unstable_by(|a, b| a.cb.cmp(&b.cb).reverse());
+        let mut ranges = HashMap::new();
+        chr_group.for_each(|frag| {
+            let range = Range {
+                start: frag.start,
+                end: frag.end,
+            };
+
+            let count = ranges.entry(range).or_insert(0);
+            *count += 1;
+        });
+
+        println!("\nFound {} ranges", ranges.len());
+
+        //ranges.sort_unstable_by(|a, b| a.start.cmp(&b.start).reverse());
+        //println!("{}", ranges.len());
+
+        //ranges.dedup();
+        //println!("{}", ranges.len());
 
         //let mut itree = IntervalTree::new();
         //for (fidx, frag) in frags.iter().enumerate() {

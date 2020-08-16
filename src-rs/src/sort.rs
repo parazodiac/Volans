@@ -1,9 +1,9 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
-use std::fs::OpenOptions;
 
 use crate::fragments::Fragment;
 use clap::ArgMatches;
@@ -42,15 +42,20 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut chr_names: Vec<u32> = chr_names.into_iter().collect();
     chr_names.sort();
     {
-        let mut file_handles: Vec<BufWriter<_>> = chr_names.iter().map(|x| {
-            BufWriter::new(File::create(sorted_file_path.clone() + &x.to_string())
-                .expect("Can't create BED file"))
-        }).collect();
+        let mut file_handles: Vec<BufWriter<_>> = chr_names
+            .iter()
+            .map(|x| {
+                BufWriter::new(
+                    File::create(sorted_file_path.clone() + &x.to_string())
+                        .expect("Can't create BED file"),
+                )
+            })
+            .collect();
 
         let mut chr_names_to_idx = HashMap::new();
         for (idx, chr_name) in chr_names.iter().enumerate() {
             chr_names_to_idx.insert(chr_name, idx);
-        };
+        }
 
         let pbar = ProgressBar::new(num_lines);
         pbar.set_style(
@@ -77,13 +82,17 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     } // closing all files.
 
     info!("Merging files into {}", sorted_file_path);
-    let file_names: Vec<_> = chr_names.iter().map(|x| {
-        sorted_file_path.clone() + &x.to_string()
-    }).collect();
+    let file_names: Vec<_> = chr_names
+        .iter()
+        .map(|x| sorted_file_path.clone() + &x.to_string())
+        .collect();
 
     // renaming first file
     std::fs::rename(file_names.first().unwrap(), sorted_file_path.clone())?;
-    let file = OpenOptions::new().append(true).open(sorted_file_path).expect("Can't create BED file");
+    let file = OpenOptions::new()
+        .append(true)
+        .open(sorted_file_path)
+        .expect("Can't create BED file");
     let mut master_fh = BufWriter::new(file);
 
     for file_name in file_names.iter().skip(1) {

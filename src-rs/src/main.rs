@@ -6,6 +6,7 @@ extern crate itertools;
 extern crate libradicl;
 extern crate num_format;
 extern crate pretty_env_logger;
+extern crate rayon;
 extern crate rust_htslib;
 extern crate serde;
 

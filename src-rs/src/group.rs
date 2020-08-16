@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufReader, BufWriter};
+use std::ops::Range;
 use std::path::Path;
 
 use crate::fragments::{Fragment, FragmentFile};
@@ -28,7 +29,7 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut output_bed =
         BufWriter::new(File::create(grouped_file_path).expect("Can't create BED file"));
 
-    let mut joint_class: HashMap<Fragment, u16> = HashMap::with_capacity(1_000);
+    let mut joint_class = HashMap::with_capacity(500);
     for (chr, chr_group) in FragmentFile::new(input_bed)
         .map(|maybe_frag| maybe_frag)
         .group_by(|frag| frag.chr)
@@ -38,12 +39,24 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         std::io::stdout().flush().expect("Can't flush output");
 
         for frag in chr_group {
-            let stat = joint_class.entry(frag).or_insert(0);
-            *stat += 1;
+            let val = joint_class
+                .entry(Range {
+                    start: frag.start,
+                    end: frag.end,
+                })
+                .or_insert(Vec::new());
+            val.push(frag.cb);
         }
 
-        for (mut frag, freq) in joint_class.drain() {
-            frag.cb = freq as u64;
+        for (range, mut cbs) in joint_class.drain() {
+            cbs.sort_unstable();
+            cbs.dedup();
+            let frag = Fragment {
+                start: range.start,
+                end: range.end,
+                cb: cbs.len() as u64,
+                chr: chr,
+            };
             frag.write(&mut output_bed, "binary")?;
         }
     }
