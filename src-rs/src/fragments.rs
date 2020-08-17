@@ -42,8 +42,8 @@ impl Fragment {
         assert_eq!(aln.is_reverse(), false);
 
         let chr = aln.tid() as u32;
-        let start = soft_clip_pos(aln) + TN5_LEFT_OFFSET;
-        let end = soft_clip_pos(maln) - TN5_RIGHT_OFFSET;
+        let start = std::cmp::max(0, soft_clip_pos(aln) + TN5_LEFT_OFFSET);
+        let end = std::cmp::max(0, soft_clip_pos(maln) - TN5_RIGHT_OFFSET);
         let cb_id = extract_cb(aln);
 
         Fragment {
