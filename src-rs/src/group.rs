@@ -6,10 +6,10 @@ use std::io::{BufReader, BufWriter};
 use std::ops::Range;
 use std::path::Path;
 
-use num_format::{Locale, ToFormattedString};
 use crate::fragments::{Fragment, FragmentFile};
 use clap::ArgMatches;
 use itertools::Itertools;
+use num_format::{Locale, ToFormattedString};
 
 pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let bed_file_path = Path::new(sub_m.value_of("ibed").expect("can't find BED flag"))
@@ -71,7 +71,8 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     println!();
-    info!("Saw total {} fragment and grouped into {} classes w/ {} deduplicated fragments.",
+    info!(
+        "Saw total {} fragment and grouped into {} classes w/ {} deduplicated fragments.",
         (total_frag).to_formatted_string(&Locale::en),
         (total_classes).to_formatted_string(&Locale::en),
         (total_group).to_formatted_string(&Locale::en)
