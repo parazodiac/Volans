@@ -16,7 +16,7 @@ pub struct Interval {
     pub end: u64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Feature {
     pub start: u64,
     pub end: u64,
