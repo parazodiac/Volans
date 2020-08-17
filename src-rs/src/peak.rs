@@ -1,16 +1,14 @@
-use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-use crate::fragments::{Fragment, FragmentFile};
-use bio::data_structures::interval_tree::IntervalTree;
+use crate::fragments::{Feature, Fragment, FragmentFile, Interval};
 use clap::ArgMatches;
 use itertools::Itertools;
-use rayon::prelude::*;
-use std::ops::Range;
+
+use num_format::{Locale, ToFormattedString};
 
 pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let bed_file_path = Path::new(sub_m.value_of("ibed").expect("can't find BED flag"))
@@ -31,7 +29,9 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut output_bed =
         BufWriter::new(File::create(peak_file_path).expect("Can't create BED file"));
 
+    let mut total_frags = 0;
     let mut total_peaks = 0;
+    let mut features = Vec::with_capacity(500);
     for (chr, chr_group) in FragmentFile::new(input_bed)
         .map(|maybe_frag| maybe_frag)
         .group_by(|frag| frag.chr)
@@ -40,21 +40,49 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         print!("\rWorking on Chromosome: {}", chr);
         std::io::stdout().flush().expect("Can't flush output");
 
-        let mut ranges = HashMap::new();
         chr_group.for_each(|frag| {
-            let range = Range {
+            let range = Feature {
                 start: frag.start,
                 end: frag.end,
+                count: frag.cb,
             };
 
-            let count = ranges.entry(range).or_insert(0);
-            *count += 1;
+            features.push(range);
         });
 
-        println!("\nFound {} ranges", ranges.len());
+        features.sort_unstable_by(|a, b| a.start.cmp(&b.start));
+        
+        let mut regions: Vec<Interval> = Vec::new();
+        let mut features_group: Vec<Vec<Feature>> = Vec::new();
 
-        //ranges.sort_unstable_by(|a, b| a.start.cmp(&b.start).reverse());
-        //println!("{}", ranges.len());
+        let first_feat = features.first().unwrap().clone();
+        let mut cur_region = Interval {
+            start: first_feat.start,
+            end: first_feat.end,
+        };
+        let mut cur_fgroup = vec![first_feat];
+
+        for feature in features.iter().skip(1) {
+            if feature.start >= cur_region.end {
+                regions.push(cur_region);
+                cur_region = Interval {
+                    start: feature.start,
+                    end: feature.end,
+                };
+
+                features_group.push(cur_fgroup);
+                cur_fgroup = vec![feature.clone()];
+
+                continue;
+            }
+
+            let position_diff: i64 = feature.count as i64 - cur_region.end as i64;
+            if position_diff <= 0 {
+                cur_fgroup.push(feature.clone());
+            } else {
+                cur_region.end = feature.end;                
+            }
+        }
 
         //ranges.dedup();
         //println!("{}", ranges.len());
@@ -111,15 +139,28 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         //    });
         //} // end for frags.into_iter()
 
-        //for frag in peak_bed {
-        //    frag.write(&mut output_bed, "binary")?;
-        //    total_peaks += 1;
-        //}
+        features.clear();
+        let num_regions = regions.len();
+        total_peaks += num_regions;
+        for i in 0..num_regions {
+            let frag = Fragment {
+                start: regions[i].start,
+                end: regions[i].end,
+                chr: chr,
+                cb: features_group[i].len() as u64
+            };
+            total_frags += frag.cb;
+            frag.write(&mut output_bed, "text")?;
+        }
 
-        break;
+        // break;
     }
 
     println!();
-    info!("Found total {} peaks", total_peaks);
+    info!("Found total {} peaks out of {} frags. ({:.02}% reduction).", 
+        (total_peaks).to_formatted_string(&Locale::en), 
+        (total_frags).to_formatted_string(&Locale::en),
+        100.0 - (total_peaks as f32 * 100.0 / total_frags as f32)
+    );
     Ok(())
 }
