@@ -6,6 +6,7 @@ use std::io::{BufReader, BufWriter};
 use std::ops::Range;
 use std::path::Path;
 
+use num_format::{Locale, ToFormattedString};
 use crate::fragments::{Fragment, FragmentFile};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -29,6 +30,10 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut output_bed =
         BufWriter::new(File::create(grouped_file_path).expect("Can't create BED file"));
 
+    let mut total_frag = 0;
+    let mut total_group = 0;
+    let mut total_classes = 0;
+
     let mut joint_class = HashMap::with_capacity(500);
     for (chr, chr_group) in FragmentFile::new(input_bed)
         .map(|maybe_frag| maybe_frag)
@@ -49,8 +54,12 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         }
 
         for (range, mut cbs) in joint_class.drain() {
+            total_frag += cbs.len();
             cbs.sort_unstable();
             cbs.dedup();
+            total_classes += 1;
+            total_group += cbs.len();
+
             let frag = Fragment {
                 start: range.start,
                 end: range.end,
@@ -62,5 +71,10 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     println!();
+    info!("Saw total {} fragment and grouped into {} classes w/ {} deduplicated fragments.",
+        (total_frag).to_formatted_string(&Locale::en),
+        (total_classes).to_formatted_string(&Locale::en),
+        (total_group).to_formatted_string(&Locale::en)
+    );
     Ok(())
 }

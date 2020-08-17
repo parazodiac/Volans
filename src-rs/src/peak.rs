@@ -29,7 +29,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut output_bed =
         BufWriter::new(File::create(peak_file_path).expect("Can't create BED file"));
 
-    let mut total_frags = 0;
+    let mut total_classes = 0;
     let mut total_peaks = 0;
     let mut features = Vec::with_capacity(500);
     for (chr, chr_group) in FragmentFile::new(input_bed)
@@ -41,13 +41,13 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         std::io::stdout().flush().expect("Can't flush output");
 
         chr_group.for_each(|frag| {
-            let range = Feature {
+            let feature = Feature {
                 start: frag.start,
                 end: frag.end,
                 count: frag.cb,
             };
 
-            features.push(range);
+            features.push(feature);
         });
 
         features.sort_unstable_by(|a, b| a.start.cmp(&b.start));
@@ -76,13 +76,52 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 continue;
             }
 
-            let position_diff: i64 = feature.count as i64 - cur_region.end as i64;
-            if position_diff <= 0 {
-                cur_fgroup.push(feature.clone());
-            } else {
+            cur_fgroup.push(feature.clone());
+            let position_diff: i64 = feature.end as i64 - cur_region.end as i64;
+            if position_diff > 0 {
                 cur_region.end = feature.end;                
             }
         }
+
+        if regions.len() > 0 && (*regions.last().unwrap() != cur_region) {
+            regions.push(cur_region);
+            features_group.push(cur_fgroup);
+        }
+
+        let num_regions = regions.len();
+        for i in 0..num_regions {
+            let region = &regions[i];
+            let features = &features_group[i];
+
+            let num_features = features.len();
+            let num_supporting_barcodes = features.iter().map(|x| x.count).sum();
+            total_classes += num_supporting_barcodes;
+
+            if num_supporting_barcodes < 5 { continue; }
+            let frag = Fragment {
+                start: region.start,
+                end: region.end,
+                chr: chr,
+                cb: num_supporting_barcodes,
+            };
+
+            total_peaks += 1;
+            frag.write(&mut output_bed, "text")?;
+        }
+
+        features.clear();
+        // break;
+    }
+
+    println!();
+    info!("Found total {} peaks out of {} classes. ({:.02}% reduction).", 
+        (total_peaks).to_formatted_string(&Locale::en), 
+        (total_classes).to_formatted_string(&Locale::en),
+        100.0 - (total_peaks as f32 * 100.0 / total_classes as f32)
+    );
+    Ok(())
+}
+
 
         //ranges.dedup();
         //println!("{}", ranges.len());
@@ -138,29 +177,3 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         //        cb: count,
         //    });
         //} // end for frags.into_iter()
-
-        features.clear();
-        let num_regions = regions.len();
-        total_peaks += num_regions;
-        for i in 0..num_regions {
-            let frag = Fragment {
-                start: regions[i].start,
-                end: regions[i].end,
-                chr: chr,
-                cb: features_group[i].len() as u64
-            };
-            total_frags += frag.cb;
-            frag.write(&mut output_bed, "text")?;
-        }
-
-        // break;
-    }
-
-    println!();
-    info!("Found total {} peaks out of {} frags. ({:.02}% reduction).", 
-        (total_peaks).to_formatted_string(&Locale::en), 
-        (total_frags).to_formatted_string(&Locale::en),
-        100.0 - (total_peaks as f32 * 100.0 / total_frags as f32)
-    );
-    Ok(())
-}
