@@ -12,15 +12,15 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq)]
 pub struct Interval {
-    pub start: u64,
-    pub end: u64,
+    pub start: u32,
+    pub end: u32,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Feature {
-    pub start: u64,
-    pub end: u64,
-    pub count: u64,
+    pub start: u32,
+    pub end: u32,
+    pub count: u32,
 }
 
 #[derive(Serialize, Deserialize, Hash, PartialEq, Eq)]

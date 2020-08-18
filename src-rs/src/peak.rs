@@ -9,6 +9,7 @@ use clap::ArgMatches;
 use itertools::Itertools;
 
 use num_format::{Locale, ToFormattedString};
+use bitvector::*;
 
 //let mut itree = IntervalTree::new();
 //for (fidx, frag) in frags.iter().enumerate() {
@@ -62,28 +63,96 @@ use num_format::{Locale, ToFormattedString};
 //    });
 //} // end for frags.into_iter()
 
-fn process_feature_group(chr: u32, features: &Vec<&Feature>) -> Vec<Feature> {
-    let mut peaks: Vec<Feature> = Vec::new();
+// fn process_feature_group(chr: u32, features: &Vec<&Feature>) -> Vec<Feature> {
+//     let mut peaks: Vec<Feature> = Vec::new();
 
-    // if chr == 3 {
-        let start = features.first().unwrap().start;
-        let end = features.last().unwrap().end;
-    //         // let start = feat.start;
-    //         // let end = feat.end;
-    //     if start <= 6778455 && end >= 6772512 {    
-    //             for feat in features {
-    //             peaks.push(*feat.clone());
-    //         }
-    //     }  
-    // }
+//     if chr == 3 {
+//         let start = features.first().unwrap().start;
+//         let end = features.last().unwrap().end;
+//     //         // let start = feat.start;
+//     //         // let end = feat.end;
+           
+//         for feat in features {
+//             if feat.start <= 6_780_455 && feat.end >= 6_772_512 { 
+//                 peaks.push(*feat.clone());
+//             }
+//         }  
+//     }
 
-    // for feat in features {
-        peaks.push(Feature {
-            start, end: end-start, count: features.len() as u64
+//     // for feat in features {
+//     //    peaks.push(Feature {
+//     //        start: feat.start, end: feat.end, count: feat.count
+//     //    });
+//     // }
+
+//     peaks
+// }
+
+fn process_pileup(feat_pile_up: &[u16]) -> Option<f32> {
+    let feature_len = feat_pile_up.len();
+    let one_deviation_distance = feature_len / 8;
+
+    let total_mass: u32 = feat_pile_up.iter().map(|x| *x as u32).sum();
+    let mut extrema_mass: u32 = feat_pile_up.iter()
+        .take(2*one_deviation_distance)
+        .map(|x| *x as u32)
+        .sum();
+    extrema_mass += feat_pile_up.iter()
+        .skip(6*one_deviation_distance)
+        .map(|x| *x as u32)
+        .sum::<u32>();
+
+    let prob: f32 = extrema_mass as f32 / total_mass as f32;
+    if prob >= 0.75 {
+        Some(prob)
+    } else {
+        None
+    }
+}
+
+fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
+    let region_start = features.first().unwrap().start as i64;
+    let region_end = features.iter().rev().map(|x| x.end).max().unwrap() as i64;
+    let region_size: usize = std::cmp::max(0, region_end - region_start + 1) as usize;
+
+    assert_ne!(region_size, 0);
+    let mut pile_up: Vec<u16> = vec![0; region_size];
+    for feat in features {
+        (feat.start..feat.end).into_iter().for_each(|x| {
+            assert!(x >= region_start as u32);
+
+            pile_up[x as usize - region_start as usize] += feat.count as u16;
         });
-    // }
+    }
 
-    peaks
+    let mut bitvec = BitVector::new(region_size);
+    let mut sorted_feature_indices: Vec<usize> = (0..region_size).collect();
+    sorted_feature_indices.sort_unstable_by(|a, b| pile_up[*a].cmp(&pile_up[*b]).reverse() );
+
+    let mut peaks: Vec<Feature> = Vec::new();
+    for feat_idx in sorted_feature_indices {
+        if bitvec.contains(feat_idx) { continue; }
+        bitvec.insert(feat_idx);
+
+        let start = std::cmp::max(0, feat_idx as i64 - (crate::WINDOW_SIZE / 2)) as usize;
+        let end = std::cmp::min(pile_up.len(), (feat_idx as i64 + (crate::WINDOW_SIZE / 2)) as usize);
+
+        let peak_prob: Option<f32> = process_pileup(&pile_up[start..end]);
+        match peak_prob {
+            None => (), 
+            Some(prob) => {
+                for i in start..end+1 { bitvec.insert(i); }
+                peaks.push( Feature{
+                    start: region_start as u32 + start as u32, 
+                    end: region_start as u32 + end as u32, 
+                    count: (prob * 100.0) as u32
+                });
+            },
+       };
+    } // end for
+
+    if peaks.len() == 0 { return None; }
+    Some(peaks)
 }
 
 pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
@@ -120,9 +189,9 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
         chr_group.for_each(|frag| {
             let feature = Feature {
-                start: frag.start,
-                end: frag.end,
-                count: frag.cb,
+                start: frag.start as u32,
+                end: frag.end as u32,
+                count: frag.cb as u32,
             };
 
             features.push(feature);
@@ -171,24 +240,29 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         }
 
         for i in 0..num_regions {
+            // if i > 1 { break; }
             let features = &features_group[i];
-            let num_supporting_barcodes = features.iter().map(|x| x.count).sum::<u64>();
+            let num_supporting_barcodes = features.iter().map(|x| x.count).sum::<u32>();
             
             total_groups += num_supporting_barcodes;
-            if num_supporting_barcodes < 5 {
+            if num_supporting_barcodes < crate::NUM_SUPPORT_CB {
                 noise += num_supporting_barcodes;
                 continue;
             }
 
-            let peaks = process_feature_group(chr, features);
-            total_peaks += peaks.len();
             total_classes += 1;
+            let peaks = match process_feature_group(features) {
+                Some(peaks) => peaks,
+                None => continue,
+            };
+
+            total_peaks += peaks.len();
             for peak in peaks {
                 let frag = Fragment {
                     chr: chr,
-                    start: peak.start,
-                    end: peak.end,
-                    cb: peak.count,
+                    start: peak.start as u64,
+                    end: peak.end as u64,
+                    cb: peak.count as u64,
                 };
 
                 frag.write(&mut output_bed, "text")?;
