@@ -8,8 +8,8 @@ use crate::fragments::{Feature, Fragment, FragmentFile, Interval};
 use clap::ArgMatches;
 use itertools::Itertools;
 
-use num_format::{Locale, ToFormattedString};
 use bitvector::*;
+use num_format::{Locale, ToFormattedString};
 
 //let mut itree = IntervalTree::new();
 //for (fidx, frag) in frags.iter().enumerate() {
@@ -71,12 +71,12 @@ use bitvector::*;
 //         let end = features.last().unwrap().end;
 //     //         // let start = feat.start;
 //     //         // let end = feat.end;
-           
+
 //         for feat in features {
-//             if feat.start <= 6_780_455 && feat.end >= 6_772_512 { 
+//             if feat.start <= 6_780_455 && feat.end >= 6_772_512 {
 //                 peaks.push(*feat.clone());
 //             }
-//         }  
+//         }
 //     }
 
 //     // for feat in features {
@@ -93,12 +93,14 @@ fn process_pileup(feat_pile_up: &[u16]) -> Option<f32> {
     let one_deviation_distance = feature_len / 8;
 
     let total_mass: u32 = feat_pile_up.iter().map(|x| *x as u32).sum();
-    let mut extrema_mass: u32 = feat_pile_up.iter()
-        .take(2*one_deviation_distance)
+    let mut extrema_mass: u32 = feat_pile_up
+        .iter()
+        .take(2 * one_deviation_distance)
         .map(|x| *x as u32)
         .sum();
-    extrema_mass += feat_pile_up.iter()
-        .skip(6*one_deviation_distance)
+    extrema_mass += feat_pile_up
+        .iter()
+        .skip(6 * one_deviation_distance)
         .map(|x| *x as u32)
         .sum::<u32>();
 
@@ -127,31 +129,40 @@ fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
 
     let mut bitvec = BitVector::new(region_size);
     let mut sorted_feature_indices: Vec<usize> = (0..region_size).collect();
-    sorted_feature_indices.sort_unstable_by(|a, b| pile_up[*a].cmp(&pile_up[*b]).reverse() );
+    sorted_feature_indices.sort_unstable_by(|a, b| pile_up[*a].cmp(&pile_up[*b]).reverse());
 
     let mut peaks: Vec<Feature> = Vec::new();
     for feat_idx in sorted_feature_indices {
-        if bitvec.contains(feat_idx) { continue; }
+        if bitvec.contains(feat_idx) {
+            continue;
+        }
         bitvec.insert(feat_idx);
 
         let start = std::cmp::max(0, feat_idx as i64 - (crate::WINDOW_SIZE / 2)) as usize;
-        let end = std::cmp::min(pile_up.len(), (feat_idx as i64 + (crate::WINDOW_SIZE / 2)) as usize);
+        let end = std::cmp::min(
+            pile_up.len(),
+            (feat_idx as i64 + (crate::WINDOW_SIZE / 2)) as usize,
+        );
 
         let peak_prob: Option<f32> = process_pileup(&pile_up[start..end]);
         match peak_prob {
-            None => (), 
+            None => (),
             Some(prob) => {
-                for i in start..end+1 { bitvec.insert(i); }
-                peaks.push( Feature{
-                    start: region_start as u32 + start as u32, 
-                    end: region_start as u32 + end as u32, 
-                    count: (prob * 100.0) as u32
+                for i in start..end + 1 {
+                    bitvec.insert(i);
+                }
+                peaks.push(Feature {
+                    start: region_start as u32 + start as u32,
+                    end: region_start as u32 + end as u32,
+                    count: (prob * 100.0) as u32,
                 });
-            },
-       };
+            }
+        };
     } // end for
 
-    if peaks.len() == 0 { return None; }
+    if peaks.len() == 0 {
+        return None;
+    }
     Some(peaks)
 }
 
@@ -201,7 +212,8 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
         let num_regions: usize;
         let mut features_group: Vec<Vec<&Feature>> = Vec::new();
-        { // grouping the features into region
+        {
+            // grouping the features into region
             let mut regions: Vec<Interval> = Vec::new();
             let first_feat = features.first().unwrap();
             let mut cur_region = Interval {
@@ -243,7 +255,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             // if i > 1 { break; }
             let features = &features_group[i];
             let num_supporting_barcodes = features.iter().map(|x| x.count).sum::<u32>();
-            
+
             total_groups += num_supporting_barcodes;
             if num_supporting_barcodes < crate::NUM_SUPPORT_CB {
                 noise += num_supporting_barcodes;
@@ -274,7 +286,8 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     println!();
-    info!("Removed {} noisy groups (<5 CB evidence) out of {}({:.2}%)",
+    info!(
+        "Removed {} noisy groups (<5 CB evidence) out of {}({:.2}%)",
         (noise).to_formatted_string(&Locale::en),
         (total_groups).to_formatted_string(&Locale::en),
         (noise as f32 * 100.0 / total_groups as f32)
