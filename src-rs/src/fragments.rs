@@ -10,12 +10,6 @@ use rust_htslib::bam::Record;
 use crate::{TN5_LEFT_OFFSET, TN5_RIGHT_OFFSET};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq)]
-pub struct Interval {
-    pub start: u32,
-    pub end: u32,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct Feature {
     pub start: u32,

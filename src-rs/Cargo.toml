@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 log = "0.4.8"
+sprs = "0.8.1"
 bio = "0.31.0"
 clap = "2.33.1"
 serde = "1.0.115"
@@ -16,5 +17,4 @@ num-format = "0.4.0"
 indicatif = "0.15.0"
 rust-htslib = "0.32.0"
 pretty_env_logger = "0.4.0"
-kolmogorov_smirnov = "1.1.0"
 libradicl = { git = "https://github.com/COMBINE-lab/alevin-fry", branch = "develop" }

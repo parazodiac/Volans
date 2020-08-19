@@ -4,12 +4,12 @@ extern crate bitvector;
 extern crate clap;
 extern crate indicatif;
 extern crate itertools;
-extern crate kolmogorov_smirnov as ks;
 extern crate libradicl;
 extern crate num_format;
 extern crate pretty_env_logger;
 extern crate rust_htslib;
 extern crate serde;
+extern crate sprs;
 
 #[macro_use]
 extern crate log;
@@ -25,6 +25,7 @@ mod fstats;
 mod group;
 mod peak;
 mod sort;
+mod stats;
 mod text;
 
 pub const MIL: usize = 1_000_000;
@@ -42,6 +43,7 @@ pub const IS_WTL_FWD: bool = true;
 pub const NUM_SUPPORT_CB: u32 = 5;
 pub const MIN_FEAT_COUNT: u64 = 5;
 pub const WINDOW_SIZE: i64 = 500;
+pub const PILEUP_THRESHOLD: u16 = 15;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("flash")
@@ -146,12 +148,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             SubCommand::with_name("count")
                 .about("A subcommand to generate peak v cell count matrix")
                 .arg(
-                    Arg::with_name("ibed")
-                        .long("ibed")
-                        .short("i")
+                    Arg::with_name("pbed")
+                        .long("pbed")
+                        .short("p")
                         .takes_value(true)
                         .required(true)
-                        .help("path to the BED file with peaks and frequency."),
+                        .help("path to the BED file with the annotated peaks."),
                 )
                 .arg(
                     Arg::with_name("cbed")
@@ -177,6 +179,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true)
                         .help("path to the BED file with CB sequences."),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("stats")
+                .about("A subcommand to summary stats of the binary bed.")
+                .arg(
+                    Arg::with_name("ibed")
+                        .long("ibed")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the BED file."),
                 ),
         )
         .get_matches();
@@ -214,6 +228,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match matches.subcommand_matches("text") {
         Some(sub_m) => text::convert(&sub_m)?,
+        None => (),
+    };
+
+    match matches.subcommand_matches("stats") {
+        Some(sub_m) => stats::stats(&sub_m)?,
         None => (),
     };
 

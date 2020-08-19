@@ -2,9 +2,10 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufReader, BufWriter};
+use std::ops::Range;
 use std::path::Path;
 
-use crate::fragments::{Feature, Fragment, FragmentFile, Interval};
+use crate::fragments::{Feature, Fragment, FragmentFile};
 use clap::ArgMatches;
 use itertools::Itertools;
 
@@ -29,7 +30,9 @@ fn process_pileup(feat_pile_up: &[u16]) -> Option<f32> {
         .sum::<u32>();
 
     let prob: f32 = extrema_mass as f32 / total_mass as f32;
-    if prob > 0.35 { return None; }
+    if prob > 0.35 {
+        return None;
+    }
     Some(prob)
 }
 
@@ -57,6 +60,9 @@ fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
         if bitvec.contains(feat_idx) {
             continue;
         }
+        if pile_up[feat_idx] < crate::PILEUP_THRESHOLD {
+            break;
+        }
         bitvec.insert(feat_idx);
 
         let start = std::cmp::max(0, feat_idx as i64 - crate::WINDOW_SIZE) as usize;
@@ -75,7 +81,7 @@ fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
                 peaks.push(Feature {
                     start: region_start as u32 + start as u32,
                     end: region_start as u32 + end as u32,
-                    count: ((1.0 -prob) * 100.0) as u32,
+                    count: ((1.0 - prob) * 100.0) as u32,
                 });
             }
         };
@@ -139,9 +145,9 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         let mut features_group: Vec<Vec<&Feature>> = Vec::new();
         {
             // grouping the features into region
-            let mut regions: Vec<Interval> = Vec::new();
+            let mut regions: Vec<Range<u32>> = Vec::new();
             let first_feat = features.first().unwrap();
-            let mut cur_region = Interval {
+            let mut cur_region = Range {
                 start: first_feat.start,
                 end: first_feat.end,
             };
@@ -150,7 +156,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             for feature in features.iter().skip(1) {
                 if feature.start >= cur_region.end {
                     regions.push(cur_region);
-                    cur_region = Interval {
+                    cur_region = Range {
                         start: feature.start,
                         end: feature.end,
                     };
@@ -216,7 +222,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                     cb: peak.count as u64,
                 };
 
-                frag.write(&mut output_bed, "text")?;
+                frag.write(&mut output_bed, "binary")?;
             }
         }
 
