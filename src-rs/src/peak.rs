@@ -11,83 +11,6 @@ use itertools::Itertools;
 use bitvector::*;
 use num_format::{Locale, ToFormattedString};
 
-//let mut itree = IntervalTree::new();
-//for (fidx, frag) in frags.iter().enumerate() {
-//    assert!(
-//        frag.start < frag.end,
-//        format!("{}, {}", frag.start, frag.end)
-//    );
-//    itree.insert(frag.start..frag.end, fidx)
-//}
-
-//let mut peak_bed: Vec<Fragment> = Vec::with_capacity(frags.len() / 10);
-//let mut tasks: HashSet<usize> = (0..frags.len()).into_iter().collect();
-//for (fidx, frag) in frags.into_iter().enumerate() {
-//    if tasks.len() == 0 {
-//        break;
-//    }
-//    if !tasks.contains(&fidx) {
-//        continue;
-//    }
-
-//    let start = frag.start;
-//    let end = frag.end;
-//    let mut count = frag.cb;
-
-//    tasks.remove(&fidx);
-//    let start_search = std::cmp::max(0, start as i64 - crate::FRAG_DIST) as u64;
-//    for intv in itree.find(start_search..end + crate::FRAG_DIST as u64) {
-//        let intv_frag_idx = intv.data().0;
-//        if !tasks.contains(&intv_frag_idx) {
-//            continue;
-//        }
-
-//        let intv_frag_start = intv.interval().start;
-//        let intv_frag_end = intv.interval().end;
-
-//        if ((intv_frag_end as i64 - end as i64).abs() <= crate::FRAG_DIST
-//            && intv_frag_start >= start)
-//            || ((intv_frag_start as i64 - start as i64).abs() <= crate::FRAG_DIST
-//                && intv_frag_end <= end)
-//        {
-//            count += intv.data().1;
-//            tasks.remove(&intv_frag_idx);
-//        }
-//    } // end for itree.find()
-
-//    peak_bed.push(Fragment {
-//        chr: frag.chr,
-//        start: start,
-//        end: end,
-//        cb: count,
-//    });
-//} // end for frags.into_iter()
-
-// fn process_feature_group(chr: u32, features: &Vec<&Feature>) -> Vec<Feature> {
-//     let mut peaks: Vec<Feature> = Vec::new();
-
-//     if chr == 3 {
-//         let start = features.first().unwrap().start;
-//         let end = features.last().unwrap().end;
-//     //         // let start = feat.start;
-//     //         // let end = feat.end;
-
-//         for feat in features {
-//             if feat.start <= 6_780_455 && feat.end >= 6_772_512 {
-//                 peaks.push(*feat.clone());
-//             }
-//         }
-//     }
-
-//     // for feat in features {
-//     //    peaks.push(Feature {
-//     //        start: feat.start, end: feat.end, count: feat.count
-//     //    });
-//     // }
-
-//     peaks
-// }
-
 fn process_pileup(feat_pile_up: &[u16]) -> Option<f32> {
     let feature_len = feat_pile_up.len();
     let one_deviation_distance = feature_len / 8;
@@ -98,6 +21,10 @@ fn process_pileup(feat_pile_up: &[u16]) -> Option<f32> {
         .take(2 * one_deviation_distance)
         .map(|x| *x as u32)
         .sum();
+
+    let prob: f32 = extrema_mass as f32 / total_mass as f32;
+    if prob < 0.275 { return None; }
+    
     extrema_mass += feat_pile_up
         .iter()
         .skip(6 * one_deviation_distance)
@@ -105,11 +32,8 @@ fn process_pileup(feat_pile_up: &[u16]) -> Option<f32> {
         .sum::<u32>();
 
     let prob: f32 = extrema_mass as f32 / total_mass as f32;
-    if prob >= 0.75 {
-        Some(prob)
-    } else {
-        None
-    }
+    if prob < 0.55 { return None; }
+    Some(prob)
 }
 
 fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
@@ -197,6 +121,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     {
         print!("\rWorking on Chromosome: {}", chr);
         std::io::stdout().flush().expect("Can't flush output");
+        if chr != 3 { continue; }
 
         chr_group.for_each(|frag| {
             let feature = Feature {
@@ -252,7 +177,6 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         }
 
         for i in 0..num_regions {
-            // if i > 1 { break; }
             let features = &features_group[i];
             let num_supporting_barcodes = features.iter().map(|x| x.count).sum::<u32>();
 
@@ -262,8 +186,17 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 continue;
             }
 
+            let mut workable_feats = Vec::new();
+            for feat in features {
+                if feat.start <= 6_780_455 && feat.end >= 6_772_512 {
+                    workable_feats.push(*feat);
+                }
+            }
+            if workable_feats.len() == 0 { continue; }
+
             total_classes += 1;
-            let peaks = match process_feature_group(features) {
+            let peaks = match process_feature_group(&workable_feats) {
+            // let peaks = match process_feature_group(features) {
                 Some(peaks) => peaks,
                 None => continue,
             };
