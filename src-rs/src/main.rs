@@ -41,7 +41,7 @@ pub const TN5_RIGHT_OFFSET: i64 = 5;
 pub const IS_WTL_FWD: bool = true;
 pub const NUM_SUPPORT_CB: u32 = 5;
 pub const MIN_FEAT_COUNT: u64 = 5;
-pub const WINDOW_SIZE: i64 = 147 * 3;
+pub const WINDOW_SIZE: i64 = 500;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("flash")
