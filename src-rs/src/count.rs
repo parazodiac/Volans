@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
-use std::io::BufReader;
+use std::io::{BufReader, BufWriter};
 use std::ops::Range;
 use std::path::Path;
 
@@ -166,6 +166,46 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     info!("Creating output MTX file: {:?}", mtx_file_path);
     sprs::io::write_matrix_market(mtx_file_path, &matrix)?;
+
+    {
+        let rows_file_path = bed_file_path
+            .parent()
+            .unwrap()
+            .join(bed_file_path.file_stem().unwrap())
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + ".counts_rows.txt";
+        let mut file = BufWriter::new(File::create(rows_file_path)?);
+        let mut sorted_row_names = vec![String::new(); row_names.len()];
+        row_names.into_iter().for_each(|(k,v)| {
+            sorted_row_names[v] = k;
+        });
+
+        for row_name in sorted_row_names {
+            file.write((row_name + "\n").as_bytes())?;
+        }
+    }
+
+    {
+        let cols_file_path = bed_file_path
+            .parent()
+            .unwrap()
+            .join(bed_file_path.file_stem().unwrap())
+            .to_str()
+            .unwrap()
+            .to_owned()
+            + ".counts_cols.txt";
+        let mut file = BufWriter::new(File::create(cols_file_path)?);
+        let mut sorted_col_names = vec![String::new(); col_names.len()];
+        col_names.into_iter().for_each(|(k,v)| {
+            sorted_col_names[v] = crate::fragments::u64_to_cb_string(k).unwrap();
+        });
+
+        for col_name in sorted_col_names {
+            file.write((col_name + "\n").as_bytes())?;
+        }
+    }
 
     Ok(())
 }
