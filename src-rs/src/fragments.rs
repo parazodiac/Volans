@@ -77,6 +77,36 @@ impl Fragment {
         Ok(())
     }
 
+    pub fn write_with_name(
+        &self,
+        mut file: &mut BufWriter<File>,
+        write_mode: &str,
+        name: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        match write_mode {
+            "text" => write!(
+                &mut file,
+                "{}\t{}\t{}\t{}\n",
+                name, self.start, self.end, self.cb
+            )?,
+            "cb_text" => write!(
+                &mut file,
+                "{}\t{}\t{}\t{}\n",
+                name,
+                self.start,
+                self.end,
+                u64_to_cb_string(self.cb)?
+            )?,
+            "binary" => {
+                let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+                file.write_all(&encoded)?
+            }
+            _ => unreachable!(),
+        }
+
+        Ok(())
+    }
+
     pub fn read(
         file: &mut BufReader<File>,
         mem_block: &mut [u8; 28],

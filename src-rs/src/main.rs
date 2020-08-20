@@ -148,6 +148,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             SubCommand::with_name("count")
                 .about("A subcommand to generate peak v cell count matrix")
                 .arg(
+                    Arg::with_name("bam")
+                        .long("bam")
+                        .short("b")
+                        .takes_value(true)
+                        .help("path to the bam file with the chromosome names."),
+                )
+                .arg(
                     Arg::with_name("pbed")
                         .long("pbed")
                         .short("p")
@@ -171,6 +178,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Arg::with_name("cbtext")
                         .long("cbtext")
                         .help("writes the last column as CB sequence."),
+                )
+                .arg(
+                    Arg::with_name("bam")
+                        .long("bam")
+                        .short("b")
+                        .takes_value(true)
+                        .help("path to the bam file with the chromosome names."),
                 )
                 .arg(
                     Arg::with_name("ibed")
