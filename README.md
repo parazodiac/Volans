@@ -1,14 +1,14 @@
 # CaT_workflow
 
-#Compilation
+# Compilation
 First make sure you have rustc installed and compile the rust program inside the src-rs folder.   
 ```
 cd src-rs
 cargo build --release
 ```
 
-#Configure
+# Configure
 Change the tags in the workflow/Snakefile
 
-#Run
+# Run
 snakemake -j 12 flash
