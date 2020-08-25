@@ -1,10 +1,9 @@
 output: "/gpfs/commons/home/asrivastava/flash/output"
 temp: "/gpfs/commons/home/asrivastava/flash/temp"
 flash_bin: "/gpfs/commons/home/asrivastava/flash/src-rs/target/release/flash"
-bwa_mem2_bin: "/gpfs/commons/home/asrivastava/miniconda3/bin/bwa-mem2"
-samtools_bin: "/gpfs/commons/home/asrivastava/miniconda3/bin/samtools"
+bwa_mem2_bin: "/gpfs/commons/home/asrivastava/miniconda3/envs/snakemake/bin/bwa"
+samtools_bin: "samtools"
 atac_10x_whitelist: "/gpfs/commons/home/asrivastava/flash/index/737K-cratac-v1.txt"
-bwa_index: "/gpfs/commons/home/asrivastava/flash/index"
 threads: 10
 reads:
   r1:

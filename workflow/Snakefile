@@ -5,27 +5,27 @@ output_folder = config["output"]
 temp_folder = config["temp"]
 
 threads = config["threads"]
-bwa_index = config["bwa_index"]
 
 bwa2_bin = config["bwa_mem2_bin"]
 flash_bin = config["flash_bin"]
 samtools_bin = config["samtools_bin"]
 tenx_whielist = config["atac_10x_whitelist"]
 
-#rule get_bwa_index:
-#    """Download genome bwa index"""
-#    output:
-#        bwa_index_download
-#    threads: 1
-#    message: "Downloading cellranger human bwa index"
-#    shell:
-#        """
-#        mkdir -p {temp_folder}
-#        cd {temp_folder}
-#        wget https://cf.10xgenomics.com/supp/cell-atac/refdata-cellranger-atac-GRCh38-1.2.0.tar.gz
-#        tar -xvzf refdata-cellranger-atac-GRCh38-1.2.0.tar.gz
-#        rm refdata-cellranger-atac-GRCh38-1.2.0.tar.gz
-#        """
+bwa_index = temp_folder+"/refdata-cellranger-atac-GRCh38-1.2.0/fasta/genome.fa"
+rule get_bwa_index:
+    """Download genome bwa index"""
+    output:
+        bwa_index
+    threads: 1
+    message: "Downloading cellranger human bwa index"
+    shell:
+        """
+        mkdir -p {temp_folder}
+        cd {temp_folder}
+        wget https://cf.10xgenomics.com/supp/cell-atac/refdata-cellranger-atac-GRCh38-1.2.0.tar.gz
+        tar -xvzf refdata-cellranger-atac-GRCh38-1.2.0.tar.gz
+        rm refdata-cellranger-atac-GRCh38-1.2.0.tar.gz
+        """
 
 rule get_reads:
     input:
@@ -52,7 +52,7 @@ rule align:
     shell:
         """
         mkdir -p {output_folder}
-        {bwa2_bin} mem -t {threads} {input.index}genome.fa {input.r1} {input.r2} | {samtools_bin} view -bS - > {output}
+        {bwa2_bin} mem -t {threads} {input.index} {input.r1} {input.r2} | {samtools_bin} view -bS - > {output}
         """
 
 rule fragments:
