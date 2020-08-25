@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use std::error::Error;
 use std::fs::File;
 use std::io::BufWriter;
@@ -49,11 +48,7 @@ fn is_multi_mapping(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
 }
 
 fn is_mitochondrial(alignments: &Vec<Record>, counter: &mut FragStats, mito_tid: u32) -> bool {
-    if alignments.first().expect("no alignments found").tid()
-        == mito_tid
-            .try_into()
-            .expect("bam header inconsist for mito chromosome")
-    {
+    if alignments.first().expect("no alignments found").tid() == mito_tid as i32 {
         counter.mito_skip += 1;
         return true;
     }
