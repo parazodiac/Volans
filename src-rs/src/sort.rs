@@ -68,8 +68,7 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         pbar.set_draw_delta(num_lines / 100);
 
         info!("Sorting files");
-        let mut input_bed =
-            BufReader::new(File::open(bed_file_path.clone()).expect("Can't open BED file"));
+        let mut input_bed = BufReader::new(File::open(bed_file_path).expect("Can't open BED file"));
         while let Ok(frag) = Fragment::read(&mut input_bed, &mut mem_block) {
             pbar.inc(1);
             match chr_names_to_idx.get(&frag.chr) {
@@ -97,7 +96,16 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     for file_name in file_names.iter().skip(1) {
         let mut file_name = BufReader::new(File::open(file_name)?);
-        std::io::copy(&mut file_name, &mut master_fh)?;
+
+        let mut mem_block = [0; 28];
+        let mut frags: Vec<Fragment> = Fragment::read(&mut file_name, &mut mem_block)
+            .into_iter()
+            .collect();
+        quickersort::sort_by(&mut frags, &|a, b| a.start().cmp(&b.start()));
+
+        for frag in frags {
+            frag.write(&mut master_fh, "binary")?;
+        }
     }
 
     info!("Deleting temporary files.");

@@ -7,6 +7,7 @@ extern crate itertools;
 extern crate libradicl;
 extern crate num_format;
 extern crate pretty_env_logger;
+extern crate quickersort;
 extern crate rust_htslib;
 extern crate serde;
 extern crate sprs;
@@ -124,6 +125,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             SubCommand::with_name("group")
                 .about("A subcommand to group the file by (chr, start, end, CB)")
                 .arg(
+                    Arg::with_name("allcb")
+                        .long("allcb")
+                        .help("report all cb instead of count."),
+                )
+                .arg(
                     Arg::with_name("ibed")
                         .long("ibed")
                         .short("i")
@@ -210,45 +216,30 @@ fn main() -> Result<(), Box<dyn Error>> {
         .get_matches();
     pretty_env_logger::init_timed();
 
-    match matches.subcommand_matches("filter") {
-        Some(sub_m) => filter::filter(&sub_m)?,
-        None => (),
-    };
-
-    match matches.subcommand_matches("correct") {
-        Some(sub_m) => barcode::correct(&sub_m)?,
-        None => (),
-    };
-
-    match matches.subcommand_matches("sort") {
-        Some(sub_m) => sort::sort(&sub_m)?,
-        None => (),
-    };
-
-    match matches.subcommand_matches("group") {
-        Some(sub_m) => group::dedup(&sub_m)?,
-        None => (),
+    if let Some(sub_m) = matches.subcommand_matches("filter") {
+        filter::filter(&sub_m)?
     }
-
-    match matches.subcommand_matches("callpeak") {
-        Some(sub_m) => peak::callpeak(&sub_m)?,
-        None => (),
+    if let Some(sub_m) = matches.subcommand_matches("correct") {
+        barcode::correct(&sub_m)?
     }
-
-    match matches.subcommand_matches("count") {
-        Some(sub_m) => count::count(&sub_m)?,
-        None => (),
+    if let Some(sub_m) = matches.subcommand_matches("sort") {
+        sort::sort(&sub_m)?
     }
-
-    match matches.subcommand_matches("text") {
-        Some(sub_m) => text::convert(&sub_m)?,
-        None => (),
-    };
-
-    match matches.subcommand_matches("stats") {
-        Some(sub_m) => stats::stats(&sub_m)?,
-        None => (),
-    };
+    if let Some(sub_m) = matches.subcommand_matches("group") {
+        group::dedup(&sub_m)?
+    }
+    if let Some(sub_m) = matches.subcommand_matches("callpeak") {
+        peak::callpeak(&sub_m)?
+    }
+    if let Some(sub_m) = matches.subcommand_matches("count") {
+        count::count(&sub_m)?
+    }
+    if let Some(sub_m) = matches.subcommand_matches("text") {
+        text::convert(&sub_m)?
+    }
+    if let Some(sub_m) = matches.subcommand_matches("stats") {
+        stats::stats(&sub_m)?
+    }
 
     Ok(())
 }

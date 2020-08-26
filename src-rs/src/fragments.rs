@@ -54,14 +54,14 @@ impl Fragment {
         write_mode: &str,
     ) -> Result<(), Box<dyn Error>> {
         match write_mode {
-            "text" => write!(
+            "text" => writeln!(
                 &mut file,
-                "{}\t{}\t{}\t{}\n",
+                "{}\t{}\t{}\t{}",
                 self.chr, self.start, self.end, self.cb
             )?,
-            "cb_text" => write!(
+            "cb_text" => writeln!(
                 &mut file,
-                "{}\t{}\t{}\t{}\n",
+                "{}\t{}\t{}\t{}",
                 self.chr,
                 self.start,
                 self.end,
@@ -84,14 +84,14 @@ impl Fragment {
         name: &str,
     ) -> Result<(), Box<dyn Error>> {
         match write_mode {
-            "text" => write!(
+            "text" => writeln!(
                 &mut file,
-                "{}\t{}\t{}\t{}\n",
+                "{}\t{}\t{}\t{}",
                 name, self.start, self.end, self.cb
             )?,
-            "cb_text" => write!(
+            "cb_text" => writeln!(
                 &mut file,
-                "{}\t{}\t{}\t{}\n",
+                "{}\t{}\t{}\t{}",
                 name,
                 self.start,
                 self.end,
@@ -113,6 +113,10 @@ impl Fragment {
     ) -> Result<Fragment, Box<bincode::ErrorKind>> {
         file.read_exact(mem_block)?;
         bincode::deserialize(&mem_block[..])
+    }
+
+    pub fn start(&self) -> u64 {
+        self.start
     }
 }
 
@@ -144,9 +148,8 @@ impl Iterator for FragmentFile {
 pub fn soft_clip_pos(aln: &Record) -> i64 {
     let mut softclip_offset = 0;
     for cigar in aln.cigar().iter() {
-        match cigar {
-            Cigar::SoftClip(val) => softclip_offset += val,
-            _ => (),
+        if let Cigar::SoftClip(val) = cigar {
+            softclip_offset += val
         }
     }
 

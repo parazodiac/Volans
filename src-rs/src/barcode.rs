@@ -29,7 +29,7 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .expect("Unable to read the file");
 
     let mut wtl_barcodes: HashSet<u64> = HashSet::new();
-    for cb_str in wtl_strings.split_terminator("\n") {
+    for cb_str in wtl_strings.split_terminator('\n') {
         let cb_bytes = match crate::IS_WTL_FWD {
             true => cb_str.as_bytes().to_owned(),
             false => bio::alphabets::dna::revcomp(cb_str.as_bytes()).to_owned(),

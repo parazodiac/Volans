@@ -13,7 +13,7 @@ pub fn stats(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .canonicalize()
         .expect("can't find absolute path of input bed file");
     info!("Found BED file: {:?}", bed_file_path);
-    let input_bed = BufReader::new(File::open(bed_file_path.clone()).expect("Can't open BED file"));
+    let input_bed = BufReader::new(File::open(bed_file_path).expect("Can't open BED file"));
 
     let mut num_lines = 0;
     for _ in FragmentFile::new(input_bed).into_iter() {

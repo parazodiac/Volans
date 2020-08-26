@@ -12,6 +12,11 @@ use itertools::Itertools;
 use num_format::{Locale, ToFormattedString};
 
 pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
+    let report_all_cb = match sub_m.occurrences_of("allcb") {
+        0 => false,
+        _ => true,
+    };
+
     let bed_file_path = Path::new(sub_m.value_of("ibed").expect("can't find BED flag"))
         .canonicalize()
         .expect("can't find absolute path of input bed file");
@@ -49,7 +54,7 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                     start: frag.start,
                     end: frag.end,
                 })
-                .or_insert(Vec::new());
+                .or_insert_with(Vec::new);
             val.push(frag.cb);
         }
 
@@ -60,13 +65,25 @@ pub fn dedup(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             total_classes += 1;
             total_group += cbs.len();
 
-            let frag = Fragment {
-                start: range.start,
-                end: range.end,
-                cb: cbs.len() as u64,
-                chr: chr,
-            };
-            frag.write(&mut output_bed, "binary")?;
+            if report_all_cb {
+                for cb in cbs {
+                    let frag = Fragment {
+                        start: range.start,
+                        end: range.end,
+                        cb,
+                        chr,
+                    };
+                    frag.write(&mut output_bed, "binary")?;
+                }
+            } else {
+                let frag = Fragment {
+                    start: range.start,
+                    end: range.end,
+                    cb: cbs.len() as u64,
+                    chr,
+                };
+                frag.write(&mut output_bed, "binary")?;
+            }
         }
     }
 

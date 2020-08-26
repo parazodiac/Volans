@@ -36,7 +36,7 @@ fn process_pileup(feat_pile_up: &[u16]) -> Option<f32> {
     Some(prob)
 }
 
-fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
+fn process_feature_group(features: &[&Feature]) -> Option<Vec<Feature>> {
     let region_start = features.first().unwrap().start as i64;
     let region_end = features.iter().rev().map(|x| x.end).max().unwrap() as i64;
     let region_size: usize = std::cmp::max(0, region_end - region_start + 1) as usize;
@@ -44,7 +44,7 @@ fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
     assert_ne!(region_size, 0);
     let mut pile_up: Vec<u16> = vec![0; region_size];
     for feat in features {
-        (feat.start..feat.end).into_iter().for_each(|x| {
+        (feat.start..feat.end).for_each(|x| {
             assert!(x >= region_start as u32);
 
             pile_up[x as usize - region_start as usize] += feat.count as u16;
@@ -87,7 +87,7 @@ fn process_feature_group(features: &Vec<&Feature>) -> Option<Vec<Feature>> {
         };
     } // end for
 
-    if peaks.len() == 0 {
+    if peaks.is_empty() {
         return None;
     }
 
@@ -140,8 +140,6 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         });
 
         features.sort_unstable_by(|a, b| a.start.cmp(&b.start));
-
-        let num_regions: usize;
         let mut features_group: Vec<Vec<&Feature>> = Vec::new();
         {
             // grouping the features into region
@@ -174,16 +172,13 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
                 }
             }
 
-            if regions.len() > 0 && (*regions.last().unwrap() != cur_region) {
+            if !regions.is_empty() && (*regions.last().unwrap() != cur_region) {
                 regions.push(cur_region);
                 features_group.push(cur_fgroup);
             }
-
-            num_regions = regions.len();
         }
 
-        for i in 0..num_regions {
-            let features = &features_group[i];
+        for features in &features_group {
             let num_supporting_barcodes = features.iter().map(|x| x.count).sum::<u32>();
 
             total_groups += num_supporting_barcodes;
@@ -216,7 +211,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             total_peaks += peaks.len();
             for peak in peaks {
                 let frag = Fragment {
-                    chr: chr,
+                    chr,
                     start: peak.start as u64,
                     end: peak.end as u64,
                     cb: peak.count as u64,

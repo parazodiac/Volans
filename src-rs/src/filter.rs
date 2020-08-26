@@ -16,7 +16,7 @@ use crate::fragments;
 use crate::fstats::FragStats;
 use crate::{MATE_MAX_DISTANCE, MATE_MIN_DISTANCE, MIN_MAPQ};
 
-fn is_unmapped(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
+fn is_unmapped(alignments: &[Record], counter: &mut FragStats) -> bool {
     let mut no_map_count = 0;
     for alignment in alignments {
         if alignment.is_unmapped() {
@@ -35,10 +35,10 @@ fn is_unmapped(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
     false
 }
 
-fn is_multi_mapping(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
+fn is_multi_mapping(alignments: &[Record], counter: &mut FragStats) -> bool {
     if alignments.len() > 2
-        || alignments.first().unwrap().aux("XA".as_bytes()).is_some()
-        || alignments.last().unwrap().aux("XA".as_bytes()).is_some()
+        || alignments.first().unwrap().aux(b"XA").is_some()
+        || alignments.last().unwrap().aux(b"XA").is_some()
     {
         counter.mm_reads += 1;
         return true;
@@ -47,7 +47,7 @@ fn is_multi_mapping(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
     false
 }
 
-fn is_mitochondrial(alignments: &Vec<Record>, counter: &mut FragStats, mito_tid: u32) -> bool {
+fn is_mitochondrial(alignments: &[Record], counter: &mut FragStats, mito_tid: u32) -> bool {
     if alignments.first().expect("no alignments found").tid() == mito_tid as i32 {
         counter.mito_skip += 1;
         return true;
@@ -55,7 +55,7 @@ fn is_mitochondrial(alignments: &Vec<Record>, counter: &mut FragStats, mito_tid:
     false
 }
 
-fn is_high_quality(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
+fn is_high_quality(alignments: &[Record], counter: &mut FragStats) -> bool {
     let mut min_quality = u8::MAX;
     for alignment in alignments {
         min_quality = std::cmp::min(min_quality, alignment.mapq());
@@ -69,7 +69,7 @@ fn is_high_quality(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
     false
 }
 
-fn is_chimeric(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
+fn is_chimeric(alignments: &[Record], counter: &mut FragStats) -> bool {
     assert_eq!(alignments.len(), 2);
     let mut aln = alignments.first().unwrap();
     let mut maln = alignments.last().unwrap();
@@ -102,7 +102,7 @@ fn is_chimeric(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
     false
 }
 
-fn has_barcode_tag(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
+fn has_barcode_tag(alignments: &[Record], counter: &mut FragStats) -> bool {
     for aln in alignments {
         if aln.aux(b"CB").is_none() {
             counter.cb_skip += 1;
@@ -110,7 +110,7 @@ fn has_barcode_tag(alignments: &Vec<Record>, counter: &mut FragStats) -> bool {
         }
     }
 
-    return true;
+    true
 }
 
 pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {

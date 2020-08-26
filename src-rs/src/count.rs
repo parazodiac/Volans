@@ -12,9 +12,9 @@ use clap::ArgMatches;
 use itertools::Itertools;
 use sprs::TriMat;
 
-use rust_htslib::bam;
 use crate::rust_htslib::bam::Read;
 use num_format::{Locale, ToFormattedString};
+use rust_htslib::bam;
 
 pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let bed_file_path = Path::new(sub_m.value_of("pbed").expect("can't find peak BED flag"))
@@ -28,8 +28,7 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .canonicalize()
         .expect("can't find absolute path of input cb BED file");
     info!("Found BED file: {:?}", cbed_file_path);
-    let cb_input_bed =
-        BufReader::new(File::open(cbed_file_path.clone()).expect("Can't open CB BED file"));
+    let cb_input_bed = BufReader::new(File::open(cbed_file_path).expect("Can't open CB BED file"));
 
     let frag_group = FragmentFile::new(input_bed)
         .map(|maybe_frag| maybe_frag)
@@ -98,7 +97,7 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             for cb in cb_group {
                 let val = count_matrix
                     .entry(peak.clone())
-                    .or_insert(HashMap::new())
+                    .or_insert_with(HashMap::new)
                     .entry(cb)
                     .or_insert(0);
                 *val += 1;
@@ -108,7 +107,8 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     } // end-while
 
     println!();
-    info!("Found total {} reads in the matrix", 
+    info!(
+        "Found total {} reads in the matrix",
         total_reads.to_formatted_string(&Locale::en)
     );
 
@@ -130,15 +130,15 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     let bam_header = match sub_m.value_of("bam") {
         Some(path) => {
-            let bam_file_path = Path::new(path).canonicalize()
+            let bam_file_path = Path::new(path)
+                .canonicalize()
                 .expect("can't find absolute path of input BAM file");
             info!("Found BAM file: {:?}", bam_file_path);
 
-            let input_bam = bam::Reader::from_path(bam_file_path)
-                .expect("Can't open BAM file");
+            let input_bam = bam::Reader::from_path(bam_file_path).expect("Can't open BAM file");
             Some(input_bam.header().clone())
-        },
-        None => None
+        }
+        None => None,
     };
 
     let mut row_names: HashMap<String, usize> = HashMap::new();
@@ -151,7 +151,9 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             }
 
             let mut row_name = match &bam_header {
-                Some(header) => std::str::from_utf8(header.tid2name(skip_chr_id)).unwrap().to_string(),
+                Some(header) => std::str::from_utf8(header.tid2name(skip_chr_id))
+                    .unwrap()
+                    .to_string(),
                 None => chr_name.clone(),
             };
             row_name.push_str("_");
@@ -180,43 +182,34 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let matrix =
         TriMat::from_triplets((row_names.len(), col_names.len()), row_ids, col_ids, data).to_csr();
 
-    let mtx_file_path = bed_file_path
-        .parent()
-        .unwrap()
-        .join("counts.mtx");
+    let mtx_file_path = bed_file_path.parent().unwrap().join("counts.mtx");
 
     info!("Creating output MTX file: {:?}", mtx_file_path);
     sprs::io::write_matrix_market(mtx_file_path, &matrix)?;
 
     {
-        let rows_file_path = bed_file_path
-            .parent()
-            .unwrap()
-            .join("counts_rows.txt");
+        let rows_file_path = bed_file_path.parent().unwrap().join("counts_rows.txt");
         let mut file = BufWriter::new(File::create(rows_file_path)?);
         let mut sorted_row_names = vec![String::new(); row_names.len()];
-        row_names.into_iter().for_each(|(k,v)| {
+        row_names.into_iter().for_each(|(k, v)| {
             sorted_row_names[v] = k;
         });
 
         for row_name in sorted_row_names {
-            file.write((row_name + "\n").as_bytes())?;
+            file.write_all((row_name + "\n").as_bytes())?;
         }
     }
 
     {
-        let cols_file_path = bed_file_path
-            .parent()
-            .unwrap()
-            .join("counts_cols.txt");
+        let cols_file_path = bed_file_path.parent().unwrap().join("counts_cols.txt");
         let mut file = BufWriter::new(File::create(cols_file_path)?);
         let mut sorted_col_names = vec![String::new(); col_names.len()];
-        col_names.into_iter().for_each(|(k,v)| {
+        col_names.into_iter().for_each(|(k, v)| {
             sorted_col_names[v] = crate::fragments::u64_to_cb_string(k).unwrap();
         });
 
         for col_name in sorted_col_names {
-            file.write((col_name + "\n").as_bytes())?;
+            file.write_all((col_name + "\n").as_bytes())?;
         }
     }
 

@@ -17,7 +17,7 @@ pub struct FragStats {
 
 impl FragStats {
     fn num_skipped(&self) -> usize {
-        return self.mm_reads
+        self.mm_reads
             + self.mapq_skip
             + self.chimeric_tids
             + self.chimeric_strand
@@ -25,14 +25,14 @@ impl FragStats {
             + self.chimeric_min_distance
             + self.mito_skip
             + self.unmap_skip
-            + self.cb_skip;
+            + self.cb_skip
     }
 
     fn num_chimeric(&self) -> usize {
-        return self.chimeric_tids
+        self.chimeric_tids
             + self.chimeric_strand
             + self.chimeric_max_distance
-            + self.chimeric_min_distance;
+            + self.chimeric_min_distance
     }
 
     fn percent_total(&self, num: usize) -> f32 {
