@@ -98,7 +98,7 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     info!("Deleting temporary files.");
-    for file_name in file_names.into_iter().skip(1) {
+    for file_name in file_names.into_iter() {
         std::fs::remove_file(file_name)?;
     }
 
