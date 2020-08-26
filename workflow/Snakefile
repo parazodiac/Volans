@@ -99,11 +99,13 @@ rule flash:
     input:
         output_folder+"/out.bam"
     output:
-        output_folder+"/flash.corrected.sorted.grouped.bed"
+        output_folder+"/flash.corrected.sorted.grouped.sorted.text.bed"
     shell:
         """
         RUST_LOG="trace" /usr/bin/time {flash_bin} filter -i {input} -o {output_folder}/flash.bed 
         RUST_LOG="trace" /usr/bin/time {flash_bin} correct -i {output_folder}/flash.bed --whitelist {tenx_whielist}
         RUST_LOG="trace" /usr/bin/time {flash_bin} sort -i {output_folder}/flash.corrected.bed
-        RUST_LOG="trace" /usr/bin/time {flash_bin} group -i {output_folder}/flash.corrected.sorted.bed
+        RUST_LOG="trace" /usr/bin/time {flash_bin} group -i {output_folder}/flash.corrected.sorted.bed --allcb
+        RUST_LOG="trace" /usr/bin/time {flash_bin} sort -i {output_folder}/flash.corrected.sorted.grouped.bed
+        RUST_LOG="trace" /usr/bin/time {flash_bin} text -i {output_folder}/flash.corrected.sorted.grouped.sorted.bed --cbtext --bam {input}
         """
