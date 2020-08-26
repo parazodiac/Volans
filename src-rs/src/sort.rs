@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-use crate::fragments::Fragment;
+use crate::fragments::{Fragment, FragmentFile};
 use clap::ArgMatches;
 
 use indicatif::{ProgressBar, ProgressStyle};
@@ -88,12 +88,8 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     // renaming first file
     let mut master_fh = BufWriter::new(File::create(sorted_file_path)?);
     for file_name in &file_names {
-        let mut file_name = BufReader::new(File::open(file_name)?);
-
-        let mut mem_block = [0; 28];
-        let mut frags: Vec<Fragment> = Fragment::read(&mut file_name, &mut mem_block)
-            .into_iter()
-            .collect();
+        let file_name = BufReader::new(File::open(file_name)?);
+        let mut frags: Vec<Fragment> = FragmentFile::new(file_name).collect();
         quickersort::sort_by(&mut frags, &|a, b| a.start().cmp(&b.start()));
 
         for frag in frags {
