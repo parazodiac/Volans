@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs::File;
-use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
@@ -87,14 +86,8 @@ pub fn sort(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .collect();
 
     // renaming first file
-    std::fs::rename(file_names.first().unwrap(), sorted_file_path.clone())?;
-    let file = OpenOptions::new()
-        .append(true)
-        .open(sorted_file_path)
-        .expect("Can't create BED file");
-    let mut master_fh = BufWriter::new(file);
-
-    for file_name in file_names.iter().skip(1) {
+    let mut master_fh = BufWriter::new(File::create(sorted_file_path)?);
+    for file_name in &file_names {
         let mut file_name = BufReader::new(File::open(file_name)?);
 
         let mut mem_block = [0; 28];
