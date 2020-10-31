@@ -1,4 +1,4 @@
-# Workflow
+# <img src="volans.png" width="40" height="40" /> Workflow
 
 ## Compilation
 First make sure you have rustc installed and compile the rust program inside the src-rs folder.   
