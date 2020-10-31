@@ -12,3 +12,7 @@ Change the tags in the workflow/Snakefile
 
 ## Run
 snakemake -j 12 flash
+
+Footnotes:
+----------
+<b id="f1">1</b> This icon image is from [Denis M Moskowitz](https://www.suberic.net/~dmm/astro/constellations.html)
