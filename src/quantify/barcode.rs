@@ -6,7 +6,9 @@ use std::io::Write;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-use crate::quantify::fragments::{cb_string_to_u64, Fragment};
+use carina::barcode::*;
+
+use crate::quantify::fragments::Fragment;
 use num_format::{Locale, ToFormattedString};
 use std::collections::HashSet;
 

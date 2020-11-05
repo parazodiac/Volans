@@ -11,6 +11,9 @@ extern crate rust_htslib;
 extern crate serde;
 extern crate sprs;
 
+extern crate bwa;
+extern crate carina;
+
 #[macro_use]
 extern crate log;
 
@@ -18,7 +21,7 @@ use clap::{App, Arg, SubCommand};
 use std::error::Error;
 
 pub mod mapping;
-pub mod quantify;
+//pub mod quantify;
 pub mod configs;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -188,32 +191,68 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .help("path to the BED file."),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("bwa")
+                .about("A subcommand to map the fastq reads.")
+                .arg(
+                    Arg::with_name("one")
+                        .short("1")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the input 1 fastq file"),
+                )
+                .arg(
+                    Arg::with_name("two")
+                        .short("2")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the input 2 fastq file"),
+                )
+                .arg(
+                    Arg::with_name("three")
+                        .short("3")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the input 3 fastq file"),
+                )
+                .arg(
+                    Arg::with_name("obam")
+                        .long("obam")
+                        .short("o")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the output bam file"),
+                )
+        )
         .get_matches();
     pretty_env_logger::init_timed();
 
-    if let Some(sub_m) = matches.subcommand_matches("filter") {
-        quantify::filter::filter(&sub_m)?
-    }
-    if let Some(sub_m) = matches.subcommand_matches("correct") {
-        quantify::barcode::correct(&sub_m)?
-    }
-    if let Some(sub_m) = matches.subcommand_matches("sort") {
-        quantify::sort::sort(&sub_m)?
-    }
-    if let Some(sub_m) = matches.subcommand_matches("group") {
-        quantify::group::dedup(&sub_m)?
-    }
-    if let Some(sub_m) = matches.subcommand_matches("callpeak") {
-        quantify::peak::callpeak(&sub_m)?
-    }
-    if let Some(sub_m) = matches.subcommand_matches("count") {
-        quantify::count::count(&sub_m)?
-    }
-    if let Some(sub_m) = matches.subcommand_matches("text") {
-        quantify::text::convert(&sub_m)?
-    }
+    //if let Some(sub_m) = matches.subcommand_matches("filter") {
+    //    quantify::filter::filter(&sub_m)?
+    //}
+    //if let Some(sub_m) = matches.subcommand_matches("correct") {
+    //    quantify::barcode::correct(&sub_m)?
+    //}
+    //if let Some(sub_m) = matches.subcommand_matches("sort") {
+    //    quantify::sort::sort(&sub_m)?
+    //}
+    //if let Some(sub_m) = matches.subcommand_matches("group") {
+    //    quantify::group::dedup(&sub_m)?
+    //}
+    //if let Some(sub_m) = matches.subcommand_matches("callpeak") {
+    //    quantify::peak::callpeak(&sub_m)?
+    //}
+    //if let Some(sub_m) = matches.subcommand_matches("count") {
+    //    quantify::count::count(&sub_m)?
+    //}
+    //if let Some(sub_m) = matches.subcommand_matches("text") {
+    //    quantify::text::convert(&sub_m)?
+    //}
+    //if let Some(sub_m) = matches.subcommand_matches("stats") {
+    //    quantify::stats::stats(&sub_m)?
+    //}
     if let Some(sub_m) = matches.subcommand_matches("stats") {
-        quantify::stats::stats(&sub_m)?
+        mapping::bwa::callback(&sub_m)?
     }
 
     Ok(())

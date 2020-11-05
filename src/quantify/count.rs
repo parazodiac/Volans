@@ -15,6 +15,7 @@ use sprs::TriMat;
 use crate::rust_htslib::bam::Read;
 use num_format::{Locale, ToFormattedString};
 use rust_htslib::bam;
+use carina::barcode::*;
 
 pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let bed_file_path = Path::new(sub_m.value_of("pbed").expect("can't find peak BED flag"))
@@ -205,7 +206,7 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         let mut file = BufWriter::new(File::create(cols_file_path)?);
         let mut sorted_col_names = vec![String::new(); col_names.len()];
         col_names.into_iter().for_each(|(k, v)| {
-            sorted_col_names[v] = crate::quantify::fragments::u64_to_cb_string(k).unwrap();
+            sorted_col_names[v] = u64_to_cb_string(k).unwrap();
         });
 
         for col_name in sorted_col_names {
