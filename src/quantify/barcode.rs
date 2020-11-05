@@ -6,7 +6,7 @@ use std::io::Write;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-use crate::fragments::{cb_string_to_u64, Fragment};
+use crate::quantify::fragments::{cb_string_to_u64, Fragment};
 use num_format::{Locale, ToFormattedString};
 use std::collections::HashSet;
 
@@ -30,7 +30,7 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     let mut wtl_barcodes: HashSet<u64> = HashSet::new();
     for cb_str in wtl_strings.split_terminator('\n') {
-        let cb_bytes = match crate::IS_WTL_FWD {
+        let cb_bytes = match crate::configs::IS_WTL_FWD {
             true => cb_str.as_bytes().to_owned(),
             false => bio::alphabets::dna::revcomp(cb_str.as_bytes()).to_owned(),
         };
@@ -63,8 +63,8 @@ pub fn correct(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut num_corrected = 0;
     while let Ok(frag) = Fragment::read(&mut input_bed, &mut mem_block) {
         num_lines += 1;
-        if num_lines % crate::TMIL == 0 {
-            print!("\rDone processing {}0M reads", num_lines / crate::TMIL);
+        if num_lines % crate::configs::TMIL == 0 {
+            print!("\rDone processing {}0M reads", num_lines / crate::configs::TMIL);
             std::io::stdout().flush().expect("Can't flush output");
         }
 

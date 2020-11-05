@@ -9,12 +9,12 @@ use clap::ArgMatches;
 use rust_htslib::bam;
 use rust_htslib::bam::{Read, Record};
 
-use crate::fragments::Fragment;
+use crate::quantify::fragments::Fragment;
 use itertools::Itertools;
 
-use crate::fragments;
-use crate::fstats::FragStats;
-use crate::{MATE_MAX_DISTANCE, MATE_MIN_DISTANCE, MIN_MAPQ};
+use crate::quantify::fragments;
+use crate::quantify::fstats::FragStats;
+use crate::configs::{MATE_MAX_DISTANCE, MATE_MIN_DISTANCE, MIN_MAPQ};
 
 fn is_unmapped(alignments: &[Record], counter: &mut FragStats) -> bool {
     let mut no_map_count = 0;
@@ -133,11 +133,11 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let (is_tenx, cb_extractor): (bool, fn(&Record) -> u64) = match sub_m.occurrences_of("tenx") {
         0 => (false, |aln: &Record| -> u64 {
             let qname = aln.qname();
-            fragments::cb_string_to_u64(&qname[(qname.len() - crate::CB_LENGTH)..])
+            fragments::cb_string_to_u64(&qname[(qname.len() - crate::configs::CB_LENGTH)..])
                 .expect("can't convert cb string to u64")
         }),
         _ => (true, |aln: &Record| -> u64 {
-            fragments::cb_string_to_u64(&aln.aux(b"CB").unwrap().string()[..crate::CB_LENGTH])
+            fragments::cb_string_to_u64(&aln.aux(b"CB").unwrap().string()[..crate::configs::CB_LENGTH])
                 .expect("can't convert cb string to u64")
         }),
     };
@@ -168,10 +168,10 @@ pub fn filter(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         .into_iter()
     {
         counter.total_reads += 1;
-        if counter.total_reads % crate::MIL == 0 {
+        if counter.total_reads % crate::configs::MIL == 0 {
             print!(
                 "\rDone processing {}M reads",
-                counter.total_reads / crate::MIL
+                counter.total_reads / crate::configs::MIL
             );
             std::io::stdout().flush().expect("Can't flush output");
         }

@@ -5,7 +5,7 @@ use std::io::{BufReader, BufWriter};
 use std::ops::Range;
 use std::path::Path;
 
-use crate::fragments::{Feature, Fragment, FragmentFile};
+use crate::quantify::fragments::{Feature, Fragment, FragmentFile};
 use clap::ArgMatches;
 use itertools::Itertools;
 
@@ -60,15 +60,15 @@ fn process_feature_group(features: &[&Feature]) -> Option<Vec<Feature>> {
         if bitvec.contains(feat_idx) {
             continue;
         }
-        if pile_up[feat_idx] < crate::PILEUP_THRESHOLD {
+        if pile_up[feat_idx] < crate::configs::PILEUP_THRESHOLD {
             break;
         }
         bitvec.insert(feat_idx);
 
-        let start = std::cmp::max(0, feat_idx as i64 - crate::WINDOW_SIZE) as usize;
+        let start = std::cmp::max(0, feat_idx as i64 - crate::configs::WINDOW_SIZE) as usize;
         let end = std::cmp::min(
             pile_up.len(),
-            (feat_idx as i64 + crate::WINDOW_SIZE) as usize,
+            (feat_idx as i64 + crate::configs::WINDOW_SIZE) as usize,
         );
 
         let peak_prob: Option<f32> = process_pileup(&pile_up[start..end]);
@@ -182,7 +182,7 @@ pub fn callpeak(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let num_supporting_barcodes = features.iter().map(|x| x.count).sum::<u32>();
 
             total_groups += num_supporting_barcodes;
-            if num_supporting_barcodes < crate::NUM_SUPPORT_CB {
+            if num_supporting_barcodes < crate::configs::NUM_SUPPORT_CB {
                 noise += num_supporting_barcodes;
                 continue;
             }

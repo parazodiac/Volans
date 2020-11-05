@@ -18,7 +18,8 @@ use clap::{App, Arg, SubCommand};
 use std::error::Error;
 
 pub mod mapping;
-pub mod fragmentation;
+pub mod quantify;
+pub mod configs;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("volans")
@@ -191,28 +192,28 @@ fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init_timed();
 
     if let Some(sub_m) = matches.subcommand_matches("filter") {
-        filter::filter(&sub_m)?
+        quantify::filter::filter(&sub_m)?
     }
     if let Some(sub_m) = matches.subcommand_matches("correct") {
-        barcode::correct(&sub_m)?
+        quantify::barcode::correct(&sub_m)?
     }
     if let Some(sub_m) = matches.subcommand_matches("sort") {
-        sort::sort(&sub_m)?
+        quantify::sort::sort(&sub_m)?
     }
     if let Some(sub_m) = matches.subcommand_matches("group") {
-        group::dedup(&sub_m)?
+        quantify::group::dedup(&sub_m)?
     }
     if let Some(sub_m) = matches.subcommand_matches("callpeak") {
-        peak::callpeak(&sub_m)?
+        quantify::peak::callpeak(&sub_m)?
     }
     if let Some(sub_m) = matches.subcommand_matches("count") {
-        count::count(&sub_m)?
+        quantify::count::count(&sub_m)?
     }
     if let Some(sub_m) = matches.subcommand_matches("text") {
-        text::convert(&sub_m)?
+        quantify::text::convert(&sub_m)?
     }
     if let Some(sub_m) = matches.subcommand_matches("stats") {
-        stats::stats(&sub_m)?
+        quantify::stats::stats(&sub_m)?
     }
 
     Ok(())

@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-use crate::fragments::{Fragment, FragmentFile};
+use crate::quantify::fragments::{Fragment, FragmentFile};
 use clap::ArgMatches;
 
 use indicatif::{ProgressBar, ProgressStyle};

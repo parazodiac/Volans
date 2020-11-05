@@ -6,7 +6,7 @@ use std::io::{BufReader, BufWriter};
 use std::ops::Range;
 use std::path::Path;
 
-use crate::fragments::{Fragment, FragmentFile};
+use crate::quantify::fragments::{Fragment, FragmentFile};
 use clap::ArgMatches;
 use itertools::Itertools;
 use num_format::{Locale, ToFormattedString};

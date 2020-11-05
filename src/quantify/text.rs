@@ -4,7 +4,7 @@ use std::io::Write;
 use std::io::{BufReader, BufWriter};
 use std::path::Path;
 
-use crate::fragments::Fragment;
+use crate::quantify::fragments::Fragment;
 use clap::ArgMatches;
 
 use crate::rust_htslib::bam::Read;
@@ -52,8 +52,8 @@ pub fn convert(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let mut mem_block = [0; 28];
     while let Ok(frag) = Fragment::read(&mut input_bed, &mut mem_block) {
         num_lines += 1;
-        if num_lines % crate::TMIL == 0 {
-            print!("\rDone processing {}0M reads", num_lines / crate::TMIL);
+        if num_lines % crate::configs::TMIL == 0 {
+            print!("\rDone processing {}0M reads", num_lines / crate::configs::TMIL);
             std::io::stdout().flush().expect("Can't flush output");
         }
 

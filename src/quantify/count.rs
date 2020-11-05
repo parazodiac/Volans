@@ -6,7 +6,7 @@ use std::io::{BufReader, BufWriter};
 use std::ops::Range;
 use std::path::Path;
 
-use crate::fragments::FragmentFile;
+use crate::quantify::fragments::FragmentFile;
 use bio::data_structures::interval_tree::{Entry, IntervalTree};
 use clap::ArgMatches;
 use itertools::Itertools;
@@ -205,7 +205,7 @@ pub fn count(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         let mut file = BufWriter::new(File::create(cols_file_path)?);
         let mut sorted_col_names = vec![String::new(); col_names.len()];
         col_names.into_iter().for_each(|(k, v)| {
-            sorted_col_names[v] = crate::fragments::u64_to_cb_string(k).unwrap();
+            sorted_col_names[v] = crate::quantify::fragments::u64_to_cb_string(k).unwrap();
         });
 
         for col_name in sorted_col_names {

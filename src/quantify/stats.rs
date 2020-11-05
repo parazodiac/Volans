@@ -4,7 +4,7 @@ use std::io::BufReader;
 use std::io::Write;
 use std::path::Path;
 
-use crate::fragments::FragmentFile;
+use crate::quantify::fragments::FragmentFile;
 use clap::ArgMatches;
 use num_format::{Locale, ToFormattedString};
 
@@ -17,8 +17,8 @@ pub fn stats(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
     let mut num_lines = 0;
     for _ in FragmentFile::new(input_bed).into_iter() {
-        if num_lines % crate::TMIL == 0 {
-            print!("\rDone processing {}0M reads", num_lines / crate::TMIL);
+        if num_lines % crate::configs::TMIL == 0 {
+            print!("\rDone processing {}0M reads", num_lines / crate::configs::TMIL);
             std::io::stdout().flush().expect("Can't flush output");
         }
 

@@ -7,7 +7,7 @@ use std::io::{BufReader, BufWriter};
 use rust_htslib::bam::record::Cigar;
 use rust_htslib::bam::Record;
 
-use crate::{TN5_LEFT_OFFSET, TN5_RIGHT_OFFSET};
+use crate::configs::{TN5_LEFT_OFFSET, TN5_RIGHT_OFFSET};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy)]
@@ -177,8 +177,8 @@ pub fn cb_string_to_u64(cb_str: &[u8]) -> Result<u64, Box<dyn Error>> {
 
 pub fn u64_to_cb_string(cb_id: u64) -> Result<String, Box<dyn Error>> {
     let mut cb_str = String::new();
-    for i in 0..crate::CB_LENGTH {
-        let offset = (crate::CB_LENGTH - i - 1) * 2;
+    for i in 0..crate::configs::CB_LENGTH {
+        let offset = (crate::configs::CB_LENGTH - i - 1) * 2;
         let nt = (cb_id & (3 << offset)) >> offset;
 
         match nt {
@@ -195,7 +195,7 @@ pub fn u64_to_cb_string(cb_id: u64) -> Result<String, Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::fragments::*;
+    use crate::quantify::fragments::*;
 
     #[test]
     fn test_cb_string_to_u64() {
