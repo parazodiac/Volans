@@ -18,16 +18,8 @@ extern crate log;
 use clap::{App, Arg, SubCommand};
 use std::error::Error;
 
-mod barcode;
-mod count;
-mod filter;
-mod fragments;
-mod fstats;
-mod group;
-mod peak;
-mod sort;
-mod stats;
-mod text;
+pub mod mapping;
+pub mod fragmentation;
 
 pub const MIL: usize = 1_000_000;
 pub const TMIL: usize = 10_000_000;
