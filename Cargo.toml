@@ -18,4 +18,3 @@ indicatif = "0.15.0"
 rust-htslib = "0.33.0"
 pretty_env_logger = "0.4.0"
 quickersort = "3.0.1"
-libradicl = { git = "https://github.com/COMBINE-lab/alevin-fry", branch = "develop" }
