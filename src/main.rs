@@ -20,9 +20,8 @@ extern crate log;
 use clap::{App, Arg, SubCommand};
 use std::error::Error;
 
-pub mod mapping;
-//pub mod quantify;
 pub mod configs;
+pub mod io;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("volans")
@@ -193,7 +192,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             SubCommand::with_name("bwa")
-                .about("A subcommand to map the fastq reads.")
+                .about("A subcommand to map the fastq reads using bwa")
                 .arg(
                     Arg::with_name("one")
                         .short("1")
@@ -216,13 +215,21 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .help("path to the input 3 fastq file"),
                 )
                 .arg(
+                    Arg::with_name("index")
+                        .long("index")
+                        .short("i")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the fasta file with the bwa index"),
+                )
+                .arg(
                     Arg::with_name("obam")
                         .long("obam")
                         .short("o")
                         .takes_value(true)
                         .required(true)
                         .help("path to the output bam file"),
-                )
+                ),
         )
         .get_matches();
     pretty_env_logger::init_timed();
@@ -251,8 +258,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     //if let Some(sub_m) = matches.subcommand_matches("stats") {
     //    quantify::stats::stats(&sub_m)?
     //}
-    if let Some(sub_m) = matches.subcommand_matches("stats") {
-        mapping::bwa::callback(&sub_m)?
+    if let Some(sub_m) = matches.subcommand_matches("bwa") {
+        io::fastq::bwa::callback(&sub_m)?
     }
 
     Ok(())
