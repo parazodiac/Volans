@@ -1,1 +1,2 @@
-pub mod fastq;
+pub mod bam;
+pub mod bwa;
