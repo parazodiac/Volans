@@ -8,15 +8,15 @@ use bwa::BwaAligner;
 use carina::barcode::cb_string_to_u64;
 use clap::ArgMatches;
 
+use crate::fragments::count_stats;
 use crate::fragments::filter;
-use crate::fragments::counting_stats;
 
 pub fn process_reads(
     fq_feeder: FastqFeeder3<File>,
     bwa: BwaAligner,
     mut obed_file: std::io::BufWriter<std::fs::File>,
 ) -> Result<(), Box<dyn Error>> {
-    let mut counter = counting_stats::FragStats {
+    let mut counter = count_stats::FragStats {
         ..Default::default()
     };
 
@@ -37,17 +37,13 @@ pub fn process_reads(
             record.2.seq(),
             record.2.qual(),
         );
-        assert!(r1_alns.len() == r2_alns.len(), 
-            "uneven number of alignments");
+        assert!(
+            r1_alns.len() == r2_alns.len(),
+            "uneven number of alignments"
+        );
 
         r1_alns.append(&mut r2_alns);
-        match filter::callback(
-            &r1_alns,
-            &mut counter,
-            false,
-            false,
-            10_000,
-        ) {
+        match filter::callback(&r1_alns, &mut counter, false, false, 10_000) {
             Some((aln, maln)) => {
                 let cb_name = record.1.seq();
                 let cb = cb_string_to_u64(&cb_name[(cb_name.len() - crate::configs::CB_LENGTH)..])
@@ -55,7 +51,7 @@ pub fn process_reads(
 
                 let frag = Fragment::new_with_cb(aln, maln, cb);
                 frag.write(&mut obed_file, "text")?;
-            },
+            }
             None => continue,
         };
     }

@@ -1,6 +1,6 @@
 use rust_htslib::bam::Record;
 
-use crate::fragments::counting_stats::FragStats;
+use crate::fragments::count_stats::FragStats;
 use crate::fragments::schema::soft_clip_pos;
 
 use crate::configs::{MATE_MAX_DISTANCE, MATE_MIN_DISTANCE, MIN_MAPQ};

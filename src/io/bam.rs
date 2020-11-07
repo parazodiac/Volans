@@ -10,8 +10,8 @@ use itertools::Itertools;
 
 use carina::barcode::cb_string_to_u64;
 
+use crate::fragments::count_stats;
 use crate::fragments::filter;
-use crate::fragments::counting_stats;
 use crate::fragments::schema::Fragment;
 
 pub fn callback(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
@@ -50,7 +50,7 @@ pub fn callback(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         mito_string, mito_tid
     );
 
-    let mut counter = counting_stats::FragStats {
+    let mut counter = count_stats::FragStats {
         ..Default::default()
     };
     for (_, read_group) in input_bam
@@ -69,17 +69,11 @@ pub fn callback(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
         }
 
         let alignments: Vec<Record> = read_group.collect();
-        match filter::callback(
-            &alignments,
-            &mut counter,
-            just_stats,
-            is_tenx,
-            mito_tid,
-        ) {
+        match filter::callback(&alignments, &mut counter, just_stats, is_tenx, mito_tid) {
             Some((aln, maln)) => {
                 let frag = Fragment::new(aln, maln, cb_extractor);
                 frag.write(&mut obed_file, "binary")?;
-            },
+            }
             None => continue,
         };
     }
