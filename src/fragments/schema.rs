@@ -44,6 +44,22 @@ impl Fragment {
         }
     }
 
+    pub fn new_with_cb(aln: &Record, maln: &Record, cb: u64) -> Fragment {
+        assert_eq!(aln.is_reverse(), false);
+
+        let chr = aln.tid() as u32;
+        let start = std::cmp::max(0, soft_clip_pos(aln) + TN5_LEFT_OFFSET);
+        let end = std::cmp::max(0, soft_clip_pos(maln) - TN5_RIGHT_OFFSET);
+        let cb_id = cb;
+
+        Fragment {
+            chr: chr as u32,
+            start: start as u64,
+            end: end as u64,
+            cb: cb_id,
+        }
+    }
+
     pub fn write(
         &self,
         mut file: &mut BufWriter<File>,

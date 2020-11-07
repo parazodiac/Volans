@@ -1,6 +1,7 @@
 pub const MIL: usize = 1_000_000;
 pub const TMIL: usize = 10_000_000;
 pub const HMIL: usize = 100_000_000;
+pub const TKILO: usize = 10_000;
 
 pub const FRAG_DIST: i64 = 10;
 pub const MATE_MIN_DISTANCE: i64 = 20;

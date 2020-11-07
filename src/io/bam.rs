@@ -10,8 +10,9 @@ use itertools::Itertools;
 
 use carina::barcode::cb_string_to_u64;
 
-use crate::fragments::counting_stats;
 use crate::fragments::filter;
+use crate::fragments::counting_stats;
+use crate::fragments::schema::Fragment;
 
 pub fn callback(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let bam_file_path = carina::file::file_path_from_clap(sub_m, "ibam")?;
@@ -69,14 +70,16 @@ pub fn callback(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
         let alignments: Vec<Record> = read_group.collect();
         match filter::callback(
-            alignments,
+            &alignments,
             &mut counter,
             just_stats,
             is_tenx,
             mito_tid,
-            cb_extractor,
         ) {
-            Some(frag) => frag.write(&mut obed_file, "binary")?,
+            Some((aln, maln)) => {
+                let frag = Fragment::new(aln, maln, cb_extractor);
+                frag.write(&mut obed_file, "binary")?;
+            },
             None => continue,
         };
     }

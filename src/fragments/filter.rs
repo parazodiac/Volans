@@ -1,7 +1,7 @@
 use rust_htslib::bam::Record;
 
 use crate::fragments::counting_stats::FragStats;
-use crate::fragments::schema::{soft_clip_pos, Fragment};
+use crate::fragments::schema::soft_clip_pos;
 
 use crate::configs::{MATE_MAX_DISTANCE, MATE_MIN_DISTANCE, MIN_MAPQ};
 
@@ -102,14 +102,13 @@ fn has_barcode_tag(alignments: &[Record], counter: &mut FragStats) -> bool {
     true
 }
 
-pub fn callback(
-    alignments: Vec<Record>,
+pub fn callback<'a>(
+    alignments: &'a Vec<Record>,
     mut counter: &mut FragStats,
     stats_only: bool,
     is_tenx: bool,
     mito_tid: u32,
-    cb_extractor: fn(&Record) -> u64,
-) -> Option<Fragment> {
+) -> Option<(&'a Record, &'a Record)> {
     if is_unmapped(&alignments, &mut counter)
         || is_multi_mapping(&alignments, &mut counter)
         || is_mitochondrial(&alignments, &mut counter, mito_tid)
@@ -124,8 +123,8 @@ pub fn callback(
     let aln = alignments.first().unwrap();
     let maln = alignments.last().unwrap();
     let frag = match alignments.first().unwrap().is_reverse() {
-        true => Fragment::new(maln, aln, cb_extractor),
-        false => Fragment::new(aln, maln, cb_extractor),
+        true => (maln, aln),
+        false => (aln, maln),
     };
 
     Some(frag)
