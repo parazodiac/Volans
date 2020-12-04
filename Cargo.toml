@@ -16,7 +16,7 @@ bitvector = "0.1.5"
 num-format = "0.4.0"
 indicatif = "0.15.0"
 quickersort = "3.0.1"
-rust-htslib = "0.33.0"
+rust-htslib = "0.35.2"
 pretty_env_logger = "0.4.0"
 
 [dependencies.bwa]

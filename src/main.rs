@@ -70,6 +70,31 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .help("path to the output bed file"),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("extract")
+                .about("A subcommand to covert 3 fastq files to 2 fastq files ")
+                .arg(
+                    Arg::with_name("one")
+                        .short("1")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the input 1 fastq file"),
+                )
+                .arg(
+                    Arg::with_name("two")
+                        .short("2")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the input 2 fastq file"),
+                )
+                .arg(
+                    Arg::with_name("barcode")
+                        .short("b")
+                        .takes_value(true)
+                        .required(true)
+                        .help("path to the input fastq file w/ barcodes"),
+                ),
+        )
         //.subcommand(
         //    SubCommand::with_name("filter")
         //        .about("A subcommand to filter BAM and generate BED.")
@@ -237,6 +262,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Some(sub_m) = matches.subcommand_matches("bwa") {
         io::bwa::callback(&sub_m)?
+    }
+    if let Some(sub_m) = matches.subcommand_matches("extract") {
+        io::fastq::callback(&sub_m)?
     }
     //if let Some(sub_m) = matches.subcommand_matches("filter") {
     //    quantify::filter::filter(&sub_m)?

@@ -65,7 +65,7 @@ pub fn callback(sub_m: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let fastq_second_path = carina::file::file_path_from_clap(sub_m, "two")?;
     let fastq_third_path = carina::file::file_path_from_clap(sub_m, "three")?;
 
-    let fastq_paths = vec![fastq_one_path, fastq_second_path, fastq_third_path.clone()];
+    let fastq_paths = vec![fastq_one_path, fastq_second_path, fastq_third_path];
     let fq_feeder: FastqFeeder3<File> = FastqFeeder3::<File>::new(fastq_paths);
 
     let index_path = carina::file::file_path_from_clap(sub_m, "index")?;
