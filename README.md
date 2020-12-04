@@ -2,17 +2,12 @@
 
 ## Workflow
 ## Compilation
-First make sure you have rustc installed and compile the rust program inside the src-rs folder.   
+First make sure you have rustc installed and compile the rust program inside the src folder.   
 ```
-cd src-rs
+cd src
 cargo build --release
 ```
 
-## Configure
-Change the tags in the workflow/Snakefile
-
-## Run
-snakemake -j 12 flash
 
 Footnotes:
 ----------
