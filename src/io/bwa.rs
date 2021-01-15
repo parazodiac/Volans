@@ -55,7 +55,7 @@ pub fn process_reads(
             None => continue,
         };
     }
-
+    
     println!("{}", counter);
     Ok(())
 }

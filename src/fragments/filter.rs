@@ -1,4 +1,4 @@
-use rust_htslib::bam::Record;
+use rust_htslib::bam::record::Record;
 
 use crate::fragments::count_stats::FragStats;
 use crate::fragments::schema::soft_clip_pos;
